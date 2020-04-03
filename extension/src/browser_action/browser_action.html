@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style type="text/css">
+      * {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        box-sizing: border-box;
+        user-select: none;
+      }
+
+      html {
+        cursor: default;
+        background: #283447;
+        padding: 20px;
+        width: 250px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: -apple-system, system-ui, open_sanslight, "Helvetica Neue",
+          Helvetica, Arial, sans-serif;
+      }
+
+      body {
+        display: none;
+      }
+
+      h1 {
+        text-align: center;
+        font-size: 24px;
+        color: #ff991f;
+        margin-bottom: 20px;
+        font-weight: 200;
+      }
+
+      a,
+      p {
+        color: #b8c7e0;
+      }
+
+      html > body a {
+        display: none;
+      }
+
+      html > body.in-conference a {
+        display: block;
+      }
+
+      html > body.in-conference p {
+        display: none;
+      }
+
+      form {
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      form > .input-row {
+        margin-bottom: 10px;
+        display: flex;
+        flex: auto;
+      }
+
+      #random {
+        width: 35px;
+        height: 40px;
+        display: block;
+        margin-left: 5px;
+        background: #b8c7e0;
+        -webkit-mask: url(random.svg);
+        -webkit-mask-position: center;
+        -webkit-mask-size: 80%;
+        -webkit-mask-repeat: no-repeat;
+        mask: url(random.svg);
+        mask-position: center;
+        mask-size: 80%;
+        mask-repeat: no-repeat;
+      }
+
+      #random:hover {
+        background: #ff991f;
+      }
+
+      html > body.in-conference #random {
+        display: none;
+      }
+
+      form > .input-row > .input-wrapper {
+        position: relative;
+        background: #0e1624;
+        border: 1px solid #455166;
+        width: 100%;
+      }
+
+      form > .input-row > .input-wrapper > label {
+        opacity: 0.7;
+        font-weight: bold;
+        position: absolute;
+        top: 11px;
+        left: 10px;
+        color: #b8c7e0;
+        cursor: text;
+      }
+
+      a,
+      p,
+      form > .input-row > .input-wrapper > label,
+      form > .input-row > .input-wrapper > input:not([list]),
+      form > .input-row > .input-wrapper > select {
+        font-size: 15px;
+      }
+
+      form > .input-row > .input-wrapper,
+      form > .input-row > .input-wrapper > input:not([list]) {
+        border-radius: 5px;
+      }
+
+      form > .input-row > .input-wrapper > input:not([list]),
+      form > .input-row > .input-wrapper > select {
+        position: relative;
+        width: 100%;
+        border: 0;
+        padding: 10px 10px 10px 30px;
+        user-select: auto;
+        color: #b8c7e0;
+        background: transparent;
+      }
+
+      form > .input-row > .input-wrapper > select {
+        -webkit-appearance: none;
+        appearance: none;
+        padding-left: 10px;
+        cursor: pointer;
+      }
+
+      form > .input-row > .input-wrapper > input:not([list]):focus,
+      form > .input-row > .input-wrapper > select:focus {
+        outline: 0;
+        /* background: white; */
+      }
+
+      form > .input-row > .input-wrapper > input:not([list]):focus + label,
+      html > body.in-conference form > .input-row > .input-wrapper > label {
+        opacity: 0;
+      }
+
+      form > .input-row > .input-wrapper > input:not([list]):valid,
+      form > .input-row > .input-wrapper > input:not([list]):disabled {
+        background: url(check.svg);
+        background-size: 15px;
+        background-repeat: no-repeat;
+        background-position: 10px center;
+      }
+
+      form > .input-row > .input-wrapper > input:not([list]):valid + label {
+        opacity: 0;
+      }
+
+      #recent_rooms_input {
+        position: absolute;
+        top: 0;
+        right: 0;
+        padding: 0;
+        width: 25px;
+        height: 38px;
+        background: #b8c7e0;
+        -webkit-mask: url(arrow.svg);
+        -webkit-mask-repeat: no-repeat;
+        -webkit-mask-position: center left;
+        -webkit-mask-size: 24px;
+        mask: url(arrow.svg);
+        mask-repeat: no-repeat;
+        mask-position: center left;
+        mask-size: 24px;
+        outline: 0;
+      }
+
+      html > body.in-conference #recent_rooms_input {
+        display: none;
+      }
+
+      #roomname {
+        padding-right: 25px;
+      }
+
+      input::-webkit-calendar-picker-indicator {
+        opacity: 0;
+      }
+
+      form
+        .input-wrapper
+        > input:not([list]):invalid:not(:focus):not(:placeholder-shown)
+        + label {
+        opacity: 0;
+      }
+
+      form
+        .input-wrapper
+        > input:not([list]):invalid:not(:placeholder-shown)
+        ~ .requirements {
+        max-height: 200px;
+        padding: 0 15px 15px 15px;
+      }
+
+      form > .input-row > .input-wrapper .requirements {
+        padding: 0 15px 0 15px;
+        max-height: 0;
+        -webkit-transition: 0.28s;
+        transition: 0.28s;
+        overflow: hidden;
+        color: red;
+        font-size: 15px;
+        font-style: italic;
+      }
+
+      form input[type="submit"],
+      form button {
+        display: block;
+        width: 100%;
+        margin: 20px 0 0 0;
+        background: #41d873;
+        color: white;
+        border: 0;
+        padding: 10px;
+        font-size: 1rem;
+      }
+
+      html > body.in-conference form input[type="submit"],
+      form button {
+        background: #bf2117;
+        width: 50%;
+        float: left;
+      }
+
+      #show {
+        display: none;
+      }
+
+      html > body.in-conference #show {
+        display: block;
+        background: #4c9aff;
+      }
+
+      form input[type="submit"],
+      button,
+      #random,
+      input[list] {
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Pop-out Jitsi Meet</h1>
+
+    <form spellcheck="false">
+      <div class="input-row">
+        <div class="input-wrapper">
+          <input
+            type="text"
+            id="nickname"
+            autocomplete="off"
+            name="nickname"
+            required
+            placeholder=" "
+          />
+          <label for="nickname">Nickname</label>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-wrapper">
+          <input
+            type="text"
+            autocomplete="off"
+            id="roomname"
+            name="roomname"
+            required
+            placeholder=" "
+            pattern="[0-9a-zA-Z]*"
+          />
+          <label for="roomname">Room</label>
+          <input list="recent_rooms_list" id="recent_rooms_input" />
+          <div class="requirements">
+            Use only letters and numbers for the room name.
+          </div>
+        </div>
+        <div id="random" title="Randomize room name"></div>
+      </div>
+      <div class="input-row">
+        <div class="input-wrapper">
+          <select id="server-select"> </select>
+        </div>
+      </div>
+      <datalist id="recent_rooms_list"></datalist>
+      <p>
+        People may accidentally enter your room if the room name is common or
+        easy to guess.
+      </p>
+      <a href="#">Copy invite link</a>
+      <button id="show" value="Show">Open</button>
+      <input type="submit" id="submit" />
+    </form>
+    <script src="browser_action.js"></script>
+  </body>
+</html>

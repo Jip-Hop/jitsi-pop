@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Pop-out Jitsi Meet</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+
+      html,
+      body {
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        font-family: sans-serif;
+        background: #0E1624;
+      }
+
+      body {
+        display: flex;
+      }
+
+      #sidebar {
+        width: 160px;
+        height: 100vh;
+        overflow-y: auto;
+        background: rgba(0,0,0,0.5);
+      }
+
+      #sidebar > .video-wrapper {
+        float: left;
+        width: 100%;
+        position: relative;
+        /* min-height: 90px; */
+        height: 90px;
+        background: black;
+        cursor: pointer;
+      }
+
+      #sidebar > .video-wrapper:hover:after,
+      #sidebar > .video-wrapper:empty:after {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        content: attr(data-displayname);
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+      }
+
+      #sidebar > .video-wrapper:empty:after {
+        color: #4e4e4e;
+        /* cursor: default; */
+      }
+
+      /* #sidebar > .video-wrapper > video {
+        width: 100%;
+      } */
+
+      #sidebar > .video-wrapper > iframe {
+        width: 100%;
+        height: 100%;
+      }
+
+      #meet {
+        height: 100%;
+        flex: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="sidebar"></div>
+    <div id="meet"></div>
+  </body>
+</html>
