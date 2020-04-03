@@ -14,7 +14,7 @@ Open [Jitsi Meet](https://jitsi.org/) videos in pop-out windows. Useful if you w
 
 The extension icon shows a green square while you're in a conference. Click the icon during a conference to copy the invite link, to invite others to the conference. From there you can also click the "Open" button to jump back to the main Jitsi Meet window, or "Close" to stop the conference and close all related windows.
 
-![Conference UI](screenshots/2.png)
+![Conference UI](screenshots/2.jpg)
 
 ### Server compatibility
 This extension works with the Jitsi Meet servers hosted at [meet.jit.si](https://meet.jit.si/), [8x8.vc](https://8x8.vc/) and [jitsi.riot.im](https://jitsi.riot.im/).
@@ -46,4 +46,4 @@ The reason I made this extension is to reliably capture a clean feed from the pa
 8. Keep the full screen pop-out windows running in the background. Put the Jitsi Meet main window on top to keep an overview of what's happening in the conference, and put the OBS window next to it, to control the final output.
 Note: for the window capture to work reliably, it's important that every participant in the conference uses a unique nickname. Else the window capture won't pick the right window each time.
 
-![Full setup with OBS](screenshots/3.png)
+![Full setup with OBS](screenshots/3.jpg)
