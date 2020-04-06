@@ -50,6 +50,7 @@
     <script type="module">
       // In case of no script, redirect after 5 seconds.
       const EXTENSION_ID = "boklbbjieahngbnhdmlhldjjibdnnbcn";
+      const DEV_EXTENSION_ID = "bbppjaddogjmckbhamcngkjahamhfflc";
       const hashValue = location.hash.substring(1);
       const urlParams = new URLSearchParams(hashValue);
       const roomName = urlParams.get("room");
@@ -134,18 +135,31 @@
           require(`https://${domain}/external_api.js`, setup);
         };
 
-        chrome.runtime.sendMessage(
-          EXTENSION_ID,
-          { type: "deepLink", roomName: roomName, domain: domain },
-          response => {
-            if (response && response.deepLink) {
-              // Will open as Pop-out Jitsi Meet conference
-              return;
-            }
+        const pingExtension = (id, failCallback) => {
+          chrome.runtime.sendMessage(
+            id, { type: "deepLink", roomName: roomName, domain: domain },
+            response => {
+              if (chrome.runtime.lastError) {
+                console.log(chrome.runtime.lastError.message);
+                if(typeof failCallback === "function"){
+                  // Don't embed now, but try callback
+                  return failCallback();
+                }
+              }
 
-            embedJitsi();
-          }
-        );
+              if (response && response.deepLink) {
+                // Will open as Pop-out Jitsi Meet conference
+                return;
+              }
+
+              embedJitsi();
+            }
+          );
+        };
+
+        pingExtension(EXTENSION_ID, () => {
+          pingExtension(DEV_EXTENSION_ID);
+        });
       }
     </script>
   </body>
