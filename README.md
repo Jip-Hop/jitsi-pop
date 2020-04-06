@@ -1,10 +1,10 @@
 # Pop-out-Jitsi-Meet
-Open [Jitsi Meet](https://jitsi.org/) videos in pop-out windows. Useful if you want to arrange your video conference across multiple monitors, or if you want to grab a clean feed of the videos with e.g. [OBS Studio](https://obsproject.com/).
+[Chrome extension](https://chrome.google.com/webstore/detail/pop-out-jitsi-meet/boklbbjieahngbnhdmlhldjjibdnnbcn) to open [Jitsi Meet](https://jitsi.org/) videos in pop-out windows. Useful if you want to arrange your video conference across multiple monitors, or if you want to grab a clean feed of the videos with e.g. [OBS Studio](https://obsproject.com/).
 
 ![Extension in browser toolbar](screenshots/1-crop.png)
 
 ### How to use
-1. Install first (see instructions below)
+1. Install the extension from the [Chrome Web Store](https://chrome.google.com/webstore/detail/pop-out-jitsi-meet/boklbbjieahngbnhdmlhldjjibdnnbcn).
 2. Click the extension icon ![Extension Icon](extension/icons/icon16.png) in the top right of your browser toolbar.
 3. Pick a nickname, and generate a hard to guess room name.
 4. Choose the desired server: Server 1 [meet.jit.si](https://meet.jit.si/), Server 2 [8x8.vc](https://8x8.vc/) or Server 3 [jitsi.riot.im](https://jitsi.riot.im/)
@@ -20,20 +20,10 @@ The extension icon shows a green square while you're in a conference. Click the 
 This extension works with the Jitsi Meet servers hosted at [meet.jit.si](https://meet.jit.si/), [8x8.vc](https://8x8.vc/) and [jitsi.riot.im](https://jitsi.riot.im/).
 
 ### Browser compatibility
-Jitsi Meet currently only works properly in Chromium based browsers (not Firefox). This extension has been developed for Google Chrome. I briefly tested it in Brave browser, but it doesn't ([yet](https://github.com/brave/brave-browser/issues/9009)) work there. May work in other Chromium based browsers like the new [Microsoft Edge](https://www.microsoft.com/edge) or [Opera](https://www.opera.com/).
-
-### Installation instructions
-This extension is not yet in the Chrome Web Store, so you need to install it manually.
-1. Download [this repository](https://github.com/Jip-Hop/Pop-out-Jitsi-Meet/archive/master.zip) and unzip it somewhere.
-2. Copy and paste `chrome://extensions` in the URL bar of Google Chrome, hit enter.
-3. Switch on "Developer Mode" in the top right.
-4. Click "Load unpacked" in the top left.
-5. Browse to the folder where you unzipped the download of this repository, go into the "Pop-out-Jitsi-Meet-master" folder and into the "extension" folder inside of it. Now click select to load the extension.
-
-The extension should now appear on the top right in the browser toolbar. Since it's manually installed with developer mode turned on, Chrome may warn you from time to time. Just ignore that for now. If you click "Disable", and you want to use the extension again, you need to enable it again from `chrome://extensions`.
+Jitsi Meet currently only works properly in Chromium based browsers ([not Firefox](https://github.com/jitsi/jitsi-meet/issues/4758)). This extension has been developed for Google Chrome. I briefly tested it in Brave browser, but it doesn't ([yet](https://github.com/brave/brave-browser/issues/9009)) work there. May work in other Chromium based browsers like the new [Microsoft Edge](https://www.microsoft.com/edge) or [Opera](https://www.opera.com/).
 
 ### Self hosted Jitsi Meet
-It doesn't work with other instances of Jitsi Meet. If you host your own version of Jitsi Meet, or want to use other servers, then you need to fork this extension and add the desired domains to "matches" for "content_scripts" in the manifest.json file. Additionally you'd have to add the desired domains to `window.servers` in the background.js file. Also, you'd need to come up with an alternative to the invite link shown in the browser action popup, since it won't link to your alternative servers.
+This extension doesn't work with other instances of Jitsi Meet. If you host your own version of Jitsi Meet, or want to use other servers, then you need to fork this extension and add the desired domains to "matches" for "content_scripts" in the manifest.json file. Additionally you'd have to add the desired domains to `window.servers` in the background.js file. Also, you'd need to come up with an alternative to the invite link shown in the browser action popup, since it won't link to your alternative servers.
 
 ### Capturing the streams
 The reason I made this extension is to reliably capture a clean feed from the participants in the video conference, using [OBS Studio](https://obsproject.com/). Currently window grabbing only works well on Windows (not [MacOS](https://obsproject.com/forum/threads/screen-tearing-random-glitching-w-window-capture.95181/)), so these instructions are Windows only.
