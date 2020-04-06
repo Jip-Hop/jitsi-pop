@@ -135,31 +135,36 @@
           require(`https://${domain}/external_api.js`, setup);
         };
 
-        const pingExtension = (id, failCallback) => {
-          chrome.runtime.sendMessage(
-            id, { type: "deepLink", roomName: roomName, domain: domain },
-            response => {
-              if (chrome.runtime.lastError) {
-                console.log(chrome.runtime.lastError.message);
-                if(typeof failCallback === "function"){
-                  // Don't embed now, but try callback
-                  return failCallback();
+        if (window.chrome) {
+          const pingExtension = (id, failCallback) => {
+            chrome.runtime.sendMessage(
+              id,
+              { type: "deepLink", roomName: roomName, domain: domain },
+              response => {
+                if (chrome.runtime.lastError) {
+                  console.log(chrome.runtime.lastError.message);
+                  if (typeof failCallback === "function") {
+                    // Don't embed now, but try callback
+                    return failCallback();
+                  }
                 }
+
+                if (response && response.deepLink) {
+                  // Will open as Pop-out Jitsi Meet conference
+                  return;
+                }
+
+                embedJitsi();
               }
+            );
+          };
 
-              if (response && response.deepLink) {
-                // Will open as Pop-out Jitsi Meet conference
-                return;
-              }
-
-              embedJitsi();
-            }
-          );
-        };
-
-        pingExtension(EXTENSION_ID, () => {
-          pingExtension(DEV_EXTENSION_ID);
-        });
+          pingExtension(EXTENSION_ID, () => {
+            pingExtension(DEV_EXTENSION_ID);
+          });
+        } else {
+          embedJitsi();
+        }
       }
     </script>
   </body>
