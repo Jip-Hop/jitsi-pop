@@ -31,6 +31,7 @@
       // To override the constraint made by the tile view.
       // https://jitsi.org/news/new-feature-brady-bunch-style-layout/
       // But only send if the values have changed.
+
       if (
         APP.conference._room.rtc._maxFrameHeight !== maxVideoHeightToReceive
       ) {
@@ -38,6 +39,11 @@
           maxVideoHeightToReceive
         );
       }
+      // TODO: dominant speaker switching seems to make resolution drop
+      // for selected participants...
+      // Perhaps need to listen to this event (when previous speaker becomes unpinned),
+      // and need to select again..?
+
       if (
         !eqSet(idsToApply, new Set(APP.conference._room.rtc._selectedEndpoints))
       ) {
@@ -82,4 +88,7 @@
   style.sheet.insertRule(
     "body, .tOoji, #largeVideoContainer, .tile-view #largeVideoContainer {background: transparent !important; background-color: transparent !important;}"
   );
+
+  // TODO: reduce logging
+  // JitsiMeetJS.setLogLevel(JitsiMeetJS.logLevels.ERROR);
 })();

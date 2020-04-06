@@ -20,6 +20,8 @@ var mainAppBrowserTab;
 var videoPopupBrowserTabs = [];
 var connectionState;
 var windowClosedPoller;
+var domain;
+var roomName;
 
 const tryUpdate = (tabId, updateProperties) => {
   chrome.windows.update(tabId, updateProperties, () => {
@@ -27,6 +29,10 @@ const tryUpdate = (tabId, updateProperties) => {
       console.log(chrome.runtime.lastError.message);
     }
   });
+};
+
+const conferenceWindowOpen = () => {
+  return window.mainAppWindowObject && !window.mainAppWindowObject.closed;
 };
 
 const setConnectionState = int => {
@@ -52,14 +58,15 @@ const setConnectionState = int => {
 };
 
 const closeMainAppWindowObject = () => {
-  if (window.mainAppWindowObject && !window.mainAppWindowObject.closed) {
+  if (conferenceWindowOpen()) {
     window.mainAppWindowObject.close();
     setConnectionState(0);
   }
 };
 
-window.openPopout = (displayName, roomName) => {
-  const domain = servers[selectedServerIndex];
+window.openPopout = (displayName, newRoomName) => {
+  roomName = newRoomName;
+  domain = servers[selectedServerIndex];
   localStorage.setItem("serverSelect", selectedServerIndex);
   localStorage.setItem("displayName", displayName);
 
@@ -106,7 +113,7 @@ window.focusAllWindows = () => {
   });
   if (mainAppBrowserTab) {
     tryUpdate(mainAppBrowserTab.windowId, { focused: true });
-  } else if (window.mainAppWindowObject && !window.mainAppWindowObject.closed) {
+  } else if (conferenceWindowOpen()) {
     // Try to focus window this way.
     // Would only happen when content script couldn't init,
     // e.g. due to internet down.
@@ -161,6 +168,81 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     setConnectionState(0);
   } else if (message.type === "videoConferenceJoined") {
     setConnectionState(2);
+  }
+});
+
+chrome.runtime.onMessageExternal.addListener(function(
+  message,
+  sender,
+  sendResponse
+) {
+  if (message.type === "deepLink") {
+    const serverIndex = servers.indexOf(message.domain);
+    if (serverIndex === -1) {
+      // Unsupported server
+      sendResponse({
+        deepLink: false
+      });
+    } else {
+      const doDeepLink = focusOnly => {
+        sendResponse({
+          deepLink: true
+        });
+
+        chrome.tabs.remove(sender.tab.id, () => {
+          if (chrome.runtime.lastError) {
+            console.log(chrome.runtime.lastError.message);
+          }
+        });
+
+        // TODO: how to ensure there's a displayName now...?
+
+        if (focusOnly) {
+          focusAllWindows();
+        } else {
+          selectedServerIndex = serverIndex;
+          openPopout(
+            localStorage.getItem("displayName") || "",
+            message.roomName
+          );
+        }
+      };
+
+      if (conferenceWindowOpen()) {
+        // Already in conference
+        if (roomName === message.roomName && domain === message.domain) {
+          // Already in linked conference
+          const shouldEmbed = confirm(
+            `You're already in "${message.roomName}" on server "${message.domain}". Opening another instance in this tab may cause feedback loops. Are you sure you want to continue?`
+          );
+          if (shouldEmbed) {
+            sendResponse({
+              deepLink: false
+            });
+          } else {
+            doDeepLink(true);
+          }
+        } else {
+          // Linking to a new conference
+          focusAllWindows();
+          const shouldDeepLink = confirm(
+            `Close current session and join room "${message.roomName}" on server "${message.domain}"?`
+          );
+          if (shouldDeepLink) {
+            closeMainAppWindowObject();
+            doDeepLink();
+          } else {
+            sendResponse({
+              deepLink: false
+            });
+          }
+        }
+      } else {
+        doDeepLink();
+      }
+    }
+
+    return true;
   }
 });
 

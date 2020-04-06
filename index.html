@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <noscript>
+      <meta
+        http-equiv="refresh"
+        content="5; url=https://chrome.google.com/webstore/detail/pop-out-jitsi-meet/boklbbjieahngbnhdmlhldjjibdnnbcn/"
+      />
+    </noscript>
+    <title>Jitsi Meet</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+
+      html,
+      body,
+      iframe {
+        min-width: 100vw;
+        min-height: 100vh;
+      }
+
+      html {
+        font-family: sans-serif;
+        color: white;
+        background: #000;
+      }
+      p {
+        margin: 1em;
+      }
+
+      a:visited {
+        color: blueviolet;
+      }
+    </style>
+  </head>
+
+  <body>
+    <p>
+      Download the Pop-out Jitsi Meet extension from the
+      <a
+        href="https://chrome.google.com/webstore/detail/pop-out-jitsi-meet/boklbbjieahngbnhdmlhldjjibdnnbcn/"
+        >Chrome Web Store</a
+      >.
+    </p>
+
+    <script type="module">
+      // In case of no script, redirect after 5 seconds.
+      const EXTENSION_ID = "boklbbjieahngbnhdmlhldjjibdnnbcn";
+      const hashValue = location.hash.substring(1);
+      const urlParams = new URLSearchParams(hashValue);
+      const roomName = urlParams.get("room");
+      const domain = urlParams.get("server");
+
+      if (!(roomName && domain)) {
+        // Room name or server value is missing,
+        // replace location immediately
+        location.replace(
+          "https://chrome.google.com/webstore/detail/pop-out-jitsi-meet/boklbbjieahngbnhdmlhldjjibdnnbcn/"
+        );
+      } else {
+        document.body.innerHTML = "";
+
+        const embedJitsi = () => {
+          const require = (url, callback) => {
+            const e = document.createElement("script");
+            e.src = url;
+            e.type = "text/javascript";
+            e.addEventListener("load", callback);
+            document.head.appendChild(e);
+          };
+
+          document.title += " | " + domain;
+
+          const hashHandler = () => {
+            if (window.location.hash !== "#" + hashValue) {
+              // Reload if we pasted a new URL in the URL bar
+              window.location.reload();
+            }
+          };
+
+          const setup = async () => {
+            // Put back hash
+            window.location.hash = hashValue;
+            window.addEventListener("hashchange", hashHandler);
+
+            const { options } = await import(
+              "./extension/src/bg/jitsiConfig.js"
+            );
+
+            var displayName;
+            options.roomName = roomName;
+            options.parentNode = document.body;
+
+            const api = new JitsiMeetExternalAPI(domain, options);
+
+            api.on("displayNameChange", e => {
+              if (e.id === api._myUserID) {
+                // For local user
+                const newDisplayName = e.displayname.trim();
+
+                if (
+                  newDisplayName !== "" &&
+                  newDisplayName !==
+                    options.interfaceConfigOverwrite.DEFAULT_REMOTE_DISPLAY_NAME
+                ) {
+                  displayName = e.displayname;
+                } else {
+                  // Invalid, reset to previous
+                  api.executeCommand("displayName", displayName);
+                }
+              }
+            });
+
+            api.on("videoConferenceJoined", e => {
+              // Get rid of ugly subject when using random characters for room name
+              displayName = e.displayName;
+              api.executeCommand("subject", " ");
+            });
+          };
+
+          if (hashValue) {
+            // Remove hash temporarily so external api script won't try to parse it
+            history.pushState(
+              "",
+              document.title,
+              window.location.pathname + window.location.search
+            );
+          }
+
+          require(`https://${domain}/external_api.js`, setup);
+        };
+
+        chrome.runtime.sendMessage(
+          EXTENSION_ID,
+          { type: "deepLink", roomName: roomName, domain: domain },
+          response => {
+            if (response && response.deepLink) {
+              // Will open as Pop-out Jitsi Meet conference
+              return;
+            }
+
+            embedJitsi();
+          }
+        );
+      }
+    </script>
+  </body>
+</html>

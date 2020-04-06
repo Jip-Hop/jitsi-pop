@@ -1,5 +1,3 @@
-// TODO add a gear icon to open the extension preferences
-
 const background = chrome.extension.getBackgroundPage();
 
 const servers = background.servers;
@@ -19,7 +17,7 @@ const wishlist =
 const recentRoomNames = JSON.parse(localStorage.getItem("recentRooms")) || [];
 
 serverSelect.innerHTML = servers.map((server, index) => {
-  return `<option value="${index}">Server ${index + 1}</option>`;
+  return `<option value="${index}">${server}</option>`;
 });
 
 const handleInConference = () => {
@@ -80,9 +78,9 @@ link.onclick = e => {
   const tmpString = "Copied!";
   navigator.clipboard
     .writeText(
-      `https://madtech.me/jitsi/#${parseInt(serverSelect.value) + 1}/${
-        roomnameInput.value
-      }`
+      `https://jip-hop.github.io/jitsi-pop/#server=${
+        servers[background.selectedServerIndex]
+      }&room=${roomnameInput.value}`
     )
     .then(
       () => {

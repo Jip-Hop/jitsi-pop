@@ -26,11 +26,18 @@
   ],
   "content_scripts": [
     {
-      "matches": ["https://meet.jit.si/*", "https://8x8.vc/*", "https://jitsi.riot.im/*"],
+      "matches": [
+        "https://meet.jit.si/*",
+        "https://8x8.vc/*",
+        "https://jitsi.riot.im/*"
+      ],
       "run_at": "document_start",
       "match_about_blank": true,
       "all_frames": true,
       "js": ["src/inject/inject.js"]
     }
-  ]
+  ],
+  "externally_connectable": {
+    "matches": ["https://jip-hop.github.io/jitsi-pop/*"]
+  }
 }
