@@ -50,11 +50,25 @@
     <script type="module">
       // In case of no script, redirect after 5 seconds.
       const EXTENSION_ID = "boklbbjieahngbnhdmlhldjjibdnnbcn";
-      const DEV_EXTENSION_ID = "bbppjaddogjmckbhamcngkjahamhfflc";
+      const DEV_EXTENSION_ID = "plimbkkbimiegedejekmlmffihphojde";
       const hashValue = location.hash.substring(1);
-      const urlParams = new URLSearchParams(hashValue);
-      const roomName = urlParams.get("room");
-      const domain = urlParams.get("server");
+      var roomName;
+      var domain;
+      const willParseURLSearchParams = hashValue.indexOf("&") > -1;
+
+      if (willParseURLSearchParams) {
+        // The old URL format, with URLSearchParams.
+        // Jitsi Meet external API tries to parse these too,
+        // which throws errors.
+        const urlParams = new URLSearchParams(hashValue);
+
+        roomName = urlParams.get("room");
+        domain = urlParams.get("server");
+      } else {
+        // New URL format, hash router style
+        let tmp;
+        [tmp, domain, roomName] = hashValue.split("/");
+      }
 
       if (!(roomName && domain)) {
         // Room name or server value is missing,
@@ -84,8 +98,11 @@
           };
 
           const setup = async () => {
-            // Put back hash
-            window.location.hash = hashValue;
+            if (willParseURLSearchParams) {
+              // Put back hash
+              window.location.hash = hashValue;
+            }
+
             window.addEventListener("hashchange", hashHandler);
 
             const { options } = await import(
@@ -123,8 +140,8 @@
             });
           };
 
-          if (hashValue) {
-            // Remove hash temporarily so external api script won't try to parse it
+          if (hashValue && willParseURLSearchParams) {
+            // Remove hash temporarily so external API script won't try to parse it
             history.pushState(
               "",
               document.title,
