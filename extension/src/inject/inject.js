@@ -34,7 +34,7 @@ const loadMain = async () => {
   // So poll to check if we can still communicate with Extension.
   setInterval(() => {
     try {
-      chrome.runtime.id;
+      chrome.runtime.getURL("");
     } catch (e) {
       if (e.message === "Extension context invalidated.") {
         // Means Extension has unloaded, close windows.
