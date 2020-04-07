@@ -1,7 +1,7 @@
 // This code only runs on pages from meet.jit.si, 8x8.vc and jitsi.riot.im,
 // or about:blank pages opened from those domains.
 
-const extUrl = chrome.runtime.getURL("");
+const extId = chrome.runtime.id;
 
 // Used in both index.js and video.js
 const tryRuntimeSendMessage = (message, callback) => {
@@ -34,7 +34,7 @@ const loadMain = async () => {
   // So poll to check if we can still communicate with Extension.
   setInterval(() => {
     try {
-      chrome.runtime.getURL("");
+      chrome.runtime.id;
     } catch (e) {
       if (e.message === "Extension context invalidated.") {
         // Means Extension has unloaded, close windows.
@@ -79,7 +79,7 @@ const loadJitsiFrame = () => {
 };
 
 const hasExtHash = win => {
-  return win.location.hash.startsWith("#" + extUrl);
+  return win.location.hash.startsWith("#/extId=" + extId);
 };
 
 const isAboutBlank = win => {

@@ -10,7 +10,7 @@ import { options } from "./jitsiConfig.js";
 window.options = options;
 window.selectedServerIndex = 0;
 
-const extUrl = chrome.runtime.getURL("");
+const extId = chrome.runtime.id;
 const windowTarget = "meet";
 const width = 960,
   height = 465;
@@ -77,7 +77,7 @@ window.openPopout = (displayName, newRoomName) => {
   recentRoomNames.unshift({ roomName: roomName, timestamp: Date.now() });
   localStorage.setItem("recentRooms", JSON.stringify(recentRoomNames));
 
-  openedUrl = `https://${domain}/#${extUrl}?displayName=${displayName}&roomName=${roomName}`;
+  openedUrl = `https://${domain}/#/extId=${extId}/displayName=${displayName}/roomName=${roomName}`;
   window.mainAppWindowObject = window.open(
     openedUrl,
     windowTarget,

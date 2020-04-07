@@ -7,7 +7,7 @@ var xOffset = 0,
   yOffset = 0;
 
 const sidebar = document.querySelector("#sidebar");
-const extUrl = chrome.runtime.getURL("");
+const extId = chrome.runtime.id;
 
 const bc = new BroadcastChannel("popout_jitsi_channel");
 
@@ -16,7 +16,7 @@ var windowIdCounter = 0;
 var myDisplayName;
 
 const getVideoDocUrl = (id, displayName) => {
-  return `about:blank#${extUrl}?id=${id}&displayName=${displayName}`;
+  return `about:blank#/extId=${extId}/id=${id}/displayName=${displayName}`;
 };
 
 const replaceIdInHref = (win, oldId, id) => {
@@ -136,12 +136,8 @@ const removeVideo = (id, videoWrapper) => {
 
 const setup = () => {
   const urlParams = new URLSearchParams(
-    window.location.hash.substring(
-      window.location.hash.indexOf("?"),
-      window.location.hash.length
-    )
+    "?" + location.hash.substring(2).replace(/\//g, "&")
   );
-
   options.parentNode = document.querySelector("#meet");
   options.roomName = urlParams.get("roomName");
 

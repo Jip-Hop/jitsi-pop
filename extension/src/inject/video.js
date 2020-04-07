@@ -60,10 +60,7 @@ const setup = () => {
   window.onhashchange = setup;
 
   const urlParams = new URLSearchParams(
-    window.location.hash.substring(
-      window.location.hash.indexOf("?"),
-      window.location.hash.length
-    )
+    "?" + location.hash.substring(2).replace(/\//g, "&")
   );
 
   id = urlParams.get("id");
@@ -112,7 +109,10 @@ const setup = () => {
       document.documentElement.addEventListener("keyup", function(event) {
         // Number 13 is the "Enter" key on the keyboard,
         // or "Escape" key pressed in full screen
-        if (event.keyCode === 13 || (event.keyCode === 27 && window.innerHeight == window.screen.height)) {
+        if (
+          event.keyCode === 13 ||
+          (event.keyCode === 27 && window.innerHeight == window.screen.height)
+        ) {
           // Cancel the default action, if needed
           event.preventDefault();
           tryRuntimeSendMessage({
