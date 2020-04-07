@@ -39,10 +39,14 @@
           maxVideoHeightToReceive
         );
       }
-      // TODO: dominant speaker switching seems to make resolution drop
-      // for selected participants...
-      // Perhaps need to listen to this event (when previous speaker becomes unpinned),
-      // and need to select again..?
+      // TODO: dominant speaker switching overrides the selectedEndpoints
+      // It will drop the resolution for the participants that are no longer selected.
+      // It will select ONLY the dominant speaker, unless we're in tile view.
+      // In tile view it will select all participants... so perhaps we do need to enforce tile view?
+      // Can we prevent dominant speaker switching? Can we prevent sending the wrong selection?
+       
+      // Dominant speaker switching works with selecting, not pinning.
+      // Can only pin 1 participant, so that's of no use either.
 
       if (
         !eqSet(idsToApply, new Set(APP.conference._room.rtc._selectedEndpoints))
