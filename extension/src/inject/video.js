@@ -84,12 +84,13 @@ const setup = () => {
 
     // Keep source and target in sync
     setInterval(syncVideo, 1000);
-    api.on("displayNameChange", displayNameChangeHandler);
+    api.addEventListener("displayNameChange", displayNameChangeHandler);
 
     if (inPopup) {
       const bc = new BroadcastChannel("popout_jitsi_channel");
 
       window.onunload = () => {
+        api.removeEventListener("displayNameChange", displayNameChangeHandler);
         // Remove this window from the array of open pop-outs in the main window
         opener.windows = opener.windows.filter(win => {
           return win !== window;

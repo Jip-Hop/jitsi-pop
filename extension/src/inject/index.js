@@ -154,14 +154,7 @@ const setup = () => {
     }
   });
 
-  // Disable tile view
-  // api.on("tileViewChanged", e => {
-  //   if (e.enabled) {
-  //     api.executeCommand("toggleTileView");
-  //   }
-  // });
-
-  api.on("videoConferenceLeft", () => {
+  api.addEventListener("videoConferenceLeft", () => {
     tryRuntimeSendMessage({
       type: "videoConferenceLeft"
     });
@@ -170,7 +163,7 @@ const setup = () => {
     // window.close();
   });
 
-  api.on("videoConferenceJoined", e => {
+  api.addEventListener("videoConferenceJoined", e => {
     tryRuntimeSendMessage({
       type: "videoConferenceJoined"
     });
@@ -183,7 +176,6 @@ const setup = () => {
 
     api.executeCommands({
       toggleFilmStrip: []
-      // toggleTileView: []
     });
   });
 
@@ -222,7 +214,7 @@ const setup = () => {
     bc.postMessage({ displayNameWarning: { id: id, message: message } });
   };
 
-  api.on("displayNameChange", e => {
+  api.addEventListener("displayNameChange", e => {
     // For local user
     if (e.id === api._myUserID) {
       if (
@@ -258,13 +250,13 @@ const setup = () => {
     }
   });
 
-  api.on("participantJoined", e => {
+  api.addEventListener("participantJoined", e => {
     displayNameWarning(e.id, e.displayName);
 
     addVideo(e.id);
   });
 
-  api.on("participantLeft", e => {
+  api.addEventListener("participantLeft", e => {
     removeVideo(e.id);
   });
 
