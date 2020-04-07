@@ -60,7 +60,8 @@ const config = {
   enableEmailInStats: false,
   gatherStats: false,
   enableStatsID: false,
-  disableDeepLinking: true
+  disableDeepLinking: true,
+  disableAudioLevels: true
 };
 
 const interfaceConfig = {
@@ -102,7 +103,8 @@ const interfaceConfig = {
   RECENT_LIST_ENABLED: false,
   SHOW_CHROME_EXTENSION_BANNER: false,
   DISABLE_PRESENCE_STATUS: true,
-  DISABLE_JOIN_LEAVE_NOTIFICATIONS: true
+  DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
+  DISABLE_DOMINANT_SPEAKER_INDICATOR: false
 };
 
 // Logging configuration
