@@ -123,6 +123,11 @@ const setup = () => {
       });
     }
   }
+
+  const objectFit = urlParams.get("fit");
+  if (objectFit) {
+    targetVid.style.objectFit = objectFit;
+  }
 };
 
 if (inIframe || inPopup) {

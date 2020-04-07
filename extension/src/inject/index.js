@@ -16,7 +16,7 @@ var windowIdCounter = 0;
 var myDisplayName;
 
 const getVideoDocUrl = (id, displayName) => {
-  return `about:blank#/extId=${extId}/id=${id}/displayName=${displayName}`;
+  return `about:blank#/extId=${extId}/id=${id}/displayName=${displayName}/fit=cover`;
 };
 
 const replaceIdInHref = (win, oldId, id) => {
