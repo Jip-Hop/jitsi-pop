@@ -1,6 +1,6 @@
 {
   "name": "Pop-out Jitsi Meet",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "manifest_version": 2,
   "description": "Open Jitsi Meet videos in pop-out windows.",
   "icons": {
@@ -38,6 +38,9 @@
     }
   ],
   "externally_connectable": {
-    "matches": ["https://jip-hop.github.io/jitsi-pop/*"]
+    "matches": [
+      "https://jip-hop.github.io/jitsi-pop/*",
+      "https://jitsipop.tk/*"
+    ]
   }
 }
