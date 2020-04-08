@@ -5,10 +5,14 @@
 const inIframe = self !== top;
 const inPopup = window.opener !== null && window.opener !== window;
 
-const api = inPopup ? window.opener.api : window.top.api;
+window.mainWindow = inPopup
+  ? window.opener.mainWindow
+  : window.parent.mainWindow;
+const api = mainWindow.api;
 var sourceVid, targetVid, displayName, id;
 
 const setTitle = () => {
+  console.log(displayName);
   document.title = "Jitsi Meet | " + displayName;
 };
 
@@ -18,17 +22,26 @@ const syncSource = () => {
   }
 };
 
-const displayNameChangeHandler = e => {
+const hashToUrlParams = (hash) => {
+  return new URLSearchParams("?" + hash.substring(2).replace(/\//g, "&"));
+};
+
+const urlParamsToHash = (urlParams) => {
+  return urlParams.toString().substring(1).replace(/&/g, "/");
+};
+
+const displayNameChangeHandler = (e) => {
+  console.log("Name changed");
   if (e.id === id) {
-    window.location.href = window.location.href.replace(
-      `displayName=${displayName}`,
-      `displayName=${e.displayname}`
-    );
+    console.log("My name changed", displayName, e.displayname);
+    const urlParams = hashToUrlParams(location.hash);
+    urlParams.set("displayName", e.displayname);
+    location.hash = urlParamsToHash(urlParams);
   }
 };
 
 const syncVideo = () => {
-  if (inPopup && (!window.opener || window.opener.closed)) {
+  if (inPopup && (!mainWindow || mainWindow.closed)) {
     window.close();
   }
   const newVid = api._getParticipantVideo(id);
@@ -59,10 +72,7 @@ const syncVideo = () => {
 const setup = () => {
   window.onhashchange = setup;
 
-  const urlParams = new URLSearchParams(
-    "?" + location.hash.substring(2).replace(/\//g, "&")
-  );
-
+  const urlParams = hashToUrlParams(location.hash);
   id = urlParams.get("id");
 
   if (id === null) {
@@ -71,6 +81,7 @@ const setup = () => {
   }
 
   displayName = urlParams.get("displayName");
+  console.log(urlParams.get("displayName"));
   setTitle();
 
   // Only run some setup code once
@@ -87,27 +98,34 @@ const setup = () => {
     api.addEventListener("displayNameChange", displayNameChangeHandler);
 
     if (inPopup) {
+      if (mainWindow && !mainWindow.closed && mainWindow.windows) {
+        mainWindow.windows.push(window);
+      }
+      console.log(mainWindow.windows);
+
       const bc = new BroadcastChannel("popout_jitsi_channel");
 
       window.onunload = () => {
         api.removeEventListener("displayNameChange", displayNameChangeHandler);
         // Remove this window from the array of open pop-outs in the main window
-        opener.windows = opener.windows.filter(win => {
-          return win !== window;
-        });
+        if (mainWindow && !mainWindow.closed && mainWindow.windows) {
+          mainWindow.windows = mainWindow.windows.filter((win) => {
+            return win !== window;
+          });
+        }
 
         bc.postMessage({ deselect: id });
         bc.close();
       };
 
       tryRuntimeSendMessage({
-        type: "videoWinLoad"
+        type: "videoWinLoad",
       });
 
       // Send message to Jitsi frame
       bc.postMessage({ select: id });
 
-      document.documentElement.addEventListener("keyup", function(event) {
+      document.documentElement.addEventListener("keyup", function (event) {
         // Number 13 is the "Enter" key on the keyboard,
         // or "Escape" key pressed in full screen
         if (
@@ -117,7 +135,7 @@ const setup = () => {
           // Cancel the default action, if needed
           event.preventDefault();
           tryRuntimeSendMessage({
-            type: "toggleFullScreen"
+            type: "toggleFullScreen",
           });
         }
       });

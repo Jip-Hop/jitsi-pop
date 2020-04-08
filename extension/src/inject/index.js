@@ -11,24 +11,28 @@ const extId = chrome.runtime.id;
 
 const bc = new BroadcastChannel("popout_jitsi_channel");
 
+window.mainWindow = window;
 window.windows = [];
 var windowIdCounter = 0;
 var myDisplayName;
 
 const getVideoDocUrl = (id, displayName) => {
-  return `about:blank#/extId=${extId}/id=${id}/displayName=${displayName}/fit=cover`;
+  return `about:blank#/extId=${extId}/id=${id}/displayName=${encodeURIComponent(
+    displayName
+  )}/fit=cover`;
 };
 
-const replaceIdInHref = (win, oldId, id) => {
-  win.location.href = win.location.href.replace(`id=${oldId}`, `id=${id}`);
+const replaceIdInHash = (win, oldId, id) => {
+  win.location.hash = win.location.hash.replace(`id=${oldId}`, `id=${id}`);
 };
 
 const popOutVideo = (id, displayName, windowId) => {
   const win = window.open(
     getVideoDocUrl(id, displayName),
     windowId,
-    `status=no,menubar=no,width=${popupWidth},height=${popupHeight},left=${screen.left +
-      xOffset},top=${screen.top + yOffset}`
+    `status=no,menubar=no,width=${popupWidth},height=${popupHeight},left=${
+      screen.left + xOffset
+    },top=${screen.top + yOffset}`
   );
 
   // We made a new window
@@ -43,11 +47,11 @@ const popOutVideo = (id, displayName, windowId) => {
       yOffset = 0;
     }
 
-    windows.push(win);
+    // windows.push(win);
   }
 };
 
-const addVideo = id => {
+const addVideo = (id) => {
   const participant = api._participants[id];
 
   // The participant must already have left the conference...
@@ -80,9 +84,9 @@ const addVideo = id => {
       const oldId = videoWrapper.dataset.id;
 
       // Keep only the open windows and replace their href
-      windows = windows.filter(function(win) {
+      windows = windows.filter(function (win) {
         if (!win.closed) {
-          replaceIdInHref(win, oldId, id);
+          replaceIdInHash(win, oldId, id);
           return true;
         }
       });
@@ -139,7 +143,7 @@ const setup = () => {
   api.executeCommand("subject", " ");
 
   // Hide filmStrip once on startup
-  api.once("filmstripDisplayChanged", e => {
+  api.once("filmstripDisplayChanged", (e) => {
     if (e.enabled) {
       api.executeCommand("toggleFilmStrip");
     }
@@ -147,16 +151,16 @@ const setup = () => {
 
   api.addEventListener("videoConferenceLeft", () => {
     tryRuntimeSendMessage({
-      type: "videoConferenceLeft"
+      type: "videoConferenceLeft",
     });
 
     // Don't close window here, window will be gone when connection drops etc.
     // window.close();
   });
 
-  api.addEventListener("videoConferenceJoined", e => {
+  api.addEventListener("videoConferenceJoined", (e) => {
     tryRuntimeSendMessage({
-      type: "videoConferenceJoined"
+      type: "videoConferenceJoined",
     });
 
     addVideo(e.id);
@@ -166,7 +170,7 @@ const setup = () => {
     // From then on also directly handle name change and join events.
 
     api.executeCommands({
-      toggleFilmStrip: []
+      toggleFilmStrip: [],
     });
   });
 
@@ -205,7 +209,7 @@ const setup = () => {
     bc.postMessage({ displayNameWarning: { id: id, message: message } });
   };
 
-  api.addEventListener("displayNameChange", e => {
+  api.addEventListener("displayNameChange", (e) => {
     // For local user
     if (e.id === api._myUserID) {
       if (
@@ -213,7 +217,6 @@ const setup = () => {
         e.displayname !==
           options.interfaceConfigOverwrite.DEFAULT_REMOTE_DISPLAY_NAME
       ) {
-        
         myDisplayName = e.displayname;
       } else {
         // TODO: warn user, but don't reset displayName here
@@ -240,24 +243,24 @@ const setup = () => {
     }
   });
 
-  api.addEventListener("participantJoined", e => {
+  api.addEventListener("participantJoined", (e) => {
     displayNameWarning(e.id, e.displayName);
 
     addVideo(e.id);
   });
 
-  api.addEventListener("participantLeft", e => {
+  api.addEventListener("participantLeft", (e) => {
     removeVideo(e.id);
   });
 
-  window.onbeforeunload = e => {
+  window.onbeforeunload = (e) => {
     // Ask for confirmation
     e.preventDefault();
     e.returnValue = "";
   };
 
   window.onunload = () => {
-    windows.forEach(win => {
+    windows.forEach((win) => {
       win.close();
     });
   };
@@ -265,9 +268,9 @@ const setup = () => {
 
 tryRuntimeSendMessage(
   {
-    type: "mainWinLoad"
+    type: "mainWinLoad",
   },
-  response => {
+  (response) => {
     options = response.options;
     setup();
   }
