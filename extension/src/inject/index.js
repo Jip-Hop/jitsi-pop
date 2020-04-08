@@ -156,7 +156,8 @@ const addVideo = (participantId, displayName) => {
   const targetFrame = document.createElement("iframe");
   targetFrame.src = getVideoDocUrl(videoId);
   videoWrapper.appendChild(targetFrame);
-  // setting the src to a url with about:blank + hash doesn't trigger a load
+  // Setting the src to a url with about:blank + hash doesn't trigger a load,
+  // so reload to properly inject the content script
   targetFrame.contentWindow.location.reload();
 };
 
