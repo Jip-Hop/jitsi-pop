@@ -20,7 +20,7 @@ const tryRuntimeSendMessage = (message, callback) => {
 const loadMain = async () => {
   const html = await fetch(
     chrome.runtime.getURL("src/inject/index.html")
-  ).then(response => response.text());
+  ).then((response) => response.text());
   // Replace page contents with custom HTML
   document.documentElement.innerHTML = html;
 
@@ -50,7 +50,7 @@ const loadMain = async () => {
 const loadVideo = async () => {
   const html = await fetch(
     chrome.runtime.getURL("src/inject/video.html")
-  ).then(response => response.text());
+  ).then((response) => response.text());
   document.documentElement.innerHTML = html;
 
   import(chrome.runtime.getURL("src/inject/video.js"));
@@ -60,7 +60,7 @@ const loadJitsiFrame = () => {
   const inject = () => {
     var s = document.createElement("script");
     s.src = chrome.runtime.getURL("src/inject/jitsiFrame.js");
-    s.onload = function() {
+    s.onload = function () {
       this.remove();
     };
 
@@ -78,11 +78,11 @@ const loadJitsiFrame = () => {
   }
 };
 
-const hasExtHash = win => {
+const hasExtHash = (win) => {
   return win.location.hash.startsWith("#/extId=" + extId);
 };
 
-const isAboutBlank = win => {
+const isAboutBlank = (win) => {
   return win.location.href.startsWith("about:blank");
 };
 
@@ -99,7 +99,15 @@ const isIframe = () => {
 };
 
 if (hasExtHash(window)) {
-  const preventLoadingAndEmpty = callback => {
+  const makeBlack = (callback) => {
+    document.documentElement.innerHTML = "";
+    document.documentElement.style.background = "black";
+    if (typeof callback === "function") {
+      callback();
+    }
+  };
+
+  const preventLoadingAndEmpty = (callback) => {
     // Stop loading contents of the page, only the origin matters
     // so we can access iframes of the same origin.
 
@@ -122,12 +130,9 @@ if (hasExtHash(window)) {
     // https://medium.com/snips-ai/how-to-block-third-party-scripts-with-a-few-lines-of-javascript-f0b08b9c4c0
     // https://stackoverflow.com/a/59518023
 
-    document.documentElement.innerHTML = "";
-    document.documentElement.style.background = "black";
-
-    const observer = new MutationObserver(mutations => {
+    const observer = new MutationObserver((mutations) => {
       mutations.forEach(({ addedNodes }) => {
-        addedNodes.forEach(node => {
+        addedNodes.forEach((node) => {
           // Remove all new nodes from the DOM, including scripts,
           // even before the script runs.
           node.parentElement.removeChild(node);
@@ -137,7 +142,7 @@ if (hasExtHash(window)) {
     // Starts the monitoring
     observer.observe(document.documentElement, {
       childList: true,
-      subtree: true
+      subtree: true,
     });
 
     window.addEventListener("DOMContentLoaded", () => {
@@ -153,10 +158,12 @@ if (hasExtHash(window)) {
   // Current page is to be processed by this extension
   if (isAboutBlank(window)) {
     // Make current page a video window
-    preventLoadingAndEmpty(loadVideo);
+    makeBlack(loadVideo);
   } else {
     // Make current page our main window
-    preventLoadingAndEmpty(loadMain);
+    makeBlack(() => {
+      preventLoadingAndEmpty(loadMain);
+    });
   }
 } else if (
   isIframe() &&

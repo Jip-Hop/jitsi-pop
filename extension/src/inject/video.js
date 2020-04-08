@@ -1,6 +1,5 @@
-// TODO: add full screen button when not in iframe, maybe with right click context menu
-
-// TODO: Make an option to resize the popout window to its native video size: https://www.w3schools.com/jsref/met_win_resizeto.asp
+// TODO: add full screen button when not in iframe
+// TODO: Make an option to resize the pop-out window to its native video size: https://www.w3schools.com/jsref/met_win_resizeto.asp
 
 const inIframe = self !== top;
 const inPopup = window.opener !== null && window.opener !== window;
@@ -9,11 +8,7 @@ window.mainWindow = inPopup
   ? window.opener.mainWindow
   : window.parent.mainWindow;
 const api = mainWindow.api;
-var sourceVid, targetVid, displayName, id;
-
-const setTitle = () => {
-  document.title = "Jitsi Meet | " + displayName;
-};
+var sourceVid, targetVid, displayName, participantId, videoId, bc;
 
 const syncSource = () => {
   if (targetVid.srcObject !== sourceVid.srcObject) {
@@ -21,22 +16,11 @@ const syncSource = () => {
   }
 };
 
-const hashToUrlParams = (hash) => {
-  return new URLSearchParams("?" + hash.substring(2).replace(/\//g, "&"));
-};
-
-const displayNameChangeHandler = (e) => {
-  if (e.id === id) {
-    displayName = e.displayname;
-    setTitle();
-  }
-};
-
 const syncVideo = () => {
   if (inPopup && (!mainWindow || mainWindow.closed)) {
     window.close();
   }
-  const newVid = api._getParticipantVideo(id);
+  const newVid = api._getParticipantVideo(participantId);
   if (!newVid) {
     return;
   }
@@ -61,91 +45,107 @@ const syncVideo = () => {
   syncSource();
 };
 
+const setTitle = () => {
+  document.title = "Jitsi Meet | " + displayName;
+};
+
+const displayNameChangeHandler = (e) => {
+  if (e.id === participantId) {
+    displayName = e.displayname;
+    setTitle();
+  }
+};
+
+const update = () => {
+  participantId = mainWindow.getParticipantId(videoId);
+  displayName = mainWindow.getFormattedDisplayName(participantId);
+  setTitle();
+  syncVideo();
+};
+
+const hashToUrlParams = (hash) => {
+  return new URLSearchParams("?" + hash.substring(2).replace(/\//g, "&"));
+};
+
 const setup = () => {
-  // Don't listen to hash change, should be using my own static id,
-  // an id that doesn't change and can be used to retrieve current participantId and name
-  window.onhashchange = setup;
+  bc = new BroadcastChannel("popout_jitsi_channel");
 
   const urlParams = hashToUrlParams(location.hash);
-  id = urlParams.get("id");
+  videoId = urlParams.get("id");
 
-  if (id === null) {
-    window.close();
+  if (videoId === null) {
     return;
   }
 
-  displayName = mainWindow.getFormattedDisplayName(id);
-  setTitle();
+  videoId = parseInt(videoId);
 
-  // Only run some setup code once
-  if (!targetVid) {
-    targetVid = document.createElement("video");
-    targetVid.muted = true;
-    targetVid.autoplay = true;
-    syncVideo();
+  bc.onmessage = (e) => {
+    if (e.data.displayNameChange) {
+      displayNameChangeHandler(e.data.displayNameChange);
+    } else if (
+      e.data.participantIdReplace &&
+      e.data.participantIdReplace.oldId === participantId
+    ) {
+      participantId = e.data.participantIdReplace.newId;
+      update();
+    }
+  };
 
-    document.body.appendChild(targetVid);
-
-    // Keep source and target in sync
-    setInterval(syncVideo, 1000);
-
-    if (inPopup) {
-      if (mainWindow && !mainWindow.closed && mainWindow.windows) {
-        mainWindow.windows.push(window);
-      }
-
-      const bc = new BroadcastChannel("popout_jitsi_channel");
-
-      bc.onmessage = (e) => {
-        if (e.data.displayNameChange) {
-          displayNameChangeHandler(e.data.displayNameChange);
-        }
-      };
-
-      window.onunload = () => {
-        // Remove this window from the array of open pop-outs in the main window
-        if (mainWindow && !mainWindow.closed && mainWindow.windows) {
-          mainWindow.windows = mainWindow.windows.filter((win) => {
-            return win !== window;
-          });
-        }
-
-        bc.postMessage({ deselect: id });
-        bc.close();
-      };
-
-      tryRuntimeSendMessage({
-        type: "videoWinLoad",
-      });
-
-      // Send message to Jitsi frame
-      bc.postMessage({ select: id });
-
-      document.documentElement.addEventListener("keyup", function (event) {
-        // Number 13 is the "Enter" key on the keyboard,
-        // or "Escape" key pressed in full screen
-        if (
-          event.keyCode === 13 ||
-          (event.keyCode === 27 && window.innerHeight == window.screen.height)
-        ) {
-          // Cancel the default action, if needed
-          event.preventDefault();
-          tryRuntimeSendMessage({
-            type: "toggleFullScreen",
-          });
-        }
+  window.onunload = () => {
+    // Remove this window from the array of open pop-outs in the main window
+    if (mainWindow && !mainWindow.closed && mainWindow.windows) {
+      mainWindow.windows = mainWindow.windows.filter((win) => {
+        return win !== window;
       });
     }
-  }
 
-  const objectFit = urlParams.get("fit");
-  if (objectFit) {
-    targetVid.style.objectFit = objectFit;
+    if (inPopup) {
+      bc.postMessage({ deselect: participantId });
+    }
+
+    bc.close();
+  };
+
+  targetVid = document.createElement("video");
+  targetVid.muted = true;
+  targetVid.autoplay = true;
+
+  update();
+
+  document.body.appendChild(targetVid);
+
+  // Keep source and target in sync
+  setInterval(syncVideo, 1000);
+
+  if (inPopup) {
+    if (mainWindow && !mainWindow.closed && mainWindow.windows) {
+      mainWindow.windows.push(window);
+    }
+
+    tryRuntimeSendMessage({
+      type: "videoWinLoad",
+    });
+
+    // Send message to Jitsi frame
+    bc.postMessage({ select: participantId });
+
+    document.documentElement.addEventListener("keyup", function (event) {
+      // Number 13 is the "Enter" key on the keyboard,
+      // or "Escape" key pressed in full screen
+      if (
+        event.keyCode === 13 ||
+        (event.keyCode === 27 && window.innerHeight == window.screen.height)
+      ) {
+        // Cancel the default action, if needed
+        event.preventDefault();
+        tryRuntimeSendMessage({
+          type: "toggleFullScreen",
+        });
+      }
+    });
   }
 };
 
 if (inIframe || inPopup) {
   setup();
 }
-
-// TODO: setup bc channel first, then request all the values from mainWindow, else I may miss messages

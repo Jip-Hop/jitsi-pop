@@ -30,28 +30,23 @@ window.getFormattedDisplayName = (id) => {
   return formatDisplayName(participantIdToDisplayName.get(id));
 };
 
+window.getParticipantId = (videoId) => {
+  return videoIdToParticipantId.get(videoId);
+};
+
 const getByValue = (map, searchValue) => {
   for (let [key, value] of map) {
     if (value === searchValue) return key;
   }
 };
 
-const getVideoDocUrl = (id) => {
-  return `about:blank#/extId=${extId}/id=${id}/fit=cover`;
-};
-
-// TODO: I can't rely on replaceIdInHash, especially not when we have
-// pop-up windows, iframes in the sidebar, and iframes in a pop-up window (multiview)
-// and they all need to keep in sync.
-// Need to use my own id system and tie the current displayName and current participantId to it.
-const replaceIdInHash = (win, oldId, id) => {
-  win.location.hash = win.location.hash.replace(`id=${oldId}`, `id=${id}`);
+const getVideoDocUrl = (videoId) => {
+  return `about:blank#/extId=${extId}/id=${videoId}`;
 };
 
 const popOutVideo = (videoId) => {
-  const participantId = videoIdToParticipantId.get(videoId);
   const win = window.open(
-    getVideoDocUrl(participantId),
+    getVideoDocUrl(videoId),
     videoId,
     `status=no,menubar=no,width=${popupWidth},height=${popupHeight},left=${
       screen.left + xOffset
@@ -77,7 +72,6 @@ const popOutVideo = (videoId) => {
 };
 
 const addVideo = (participantId, displayName) => {
-  console.log("ADD VIDEO", participantId, displayName);
   const participant = api._participants[participantId];
 
   // The participant must already have left the conference...
@@ -93,8 +87,7 @@ const addVideo = (participantId, displayName) => {
     return;
   }
 
-  // TODO: don't directly call set, make a function to do it and notify via bc channel,
-  // perhaps make dedicated bc channel for video pages and one for the jitsiFrame
+  // TODO: don't directly call set, make a function to do it and notify via bc channel
   participantIdToDisplayName.set(participantId, displayName);
   displayName = formatDisplayName(displayName);
 
@@ -106,34 +99,38 @@ const addVideo = (participantId, displayName) => {
   // Check if we can reuse an empty wrapper for same username
   if (!videoWrapper) {
     const emptyWrappers = displayNameToEmptyWrappers.get(displayName);
-    console.log("ADD VIDEO emptyWrappers", new Array(emptyWrappers));
-    videoWrapper = emptyWrappers ? emptyWrappers.shift() : null;
-    console.log("ADD VIDEO videoWrapper", videoWrapper);
-    if (videoWrapper) {
-      // We're reusing a wrapper with a new participantId,
-      // update the map
-      const oldId = getByValue(participantIdToSidebarVideoWrapper, videoWrapper);
-      const videoId = getByValue(videoIdToParticipantId, oldId);
-      // TODO: don't call set directly but make a function and ping changed via bc
-      videoIdToParticipantId.set(videoId, participantId);
-      console.log(
-        "ADD VIDEO, replace wrapper",
-        videoId,
-        participantId,
-        new Map(videoIdToParticipantId)
-      );
-      // Also update the pop out windows
-
-      // Keep only the open windows and replace their href
-      // TODO: ping via bc channel, but never change hash
-      windows = windows.filter(function (win) {
-        if (!win.closed) {
-          console.log("ADD VIDEO, replace hash", win.location.hash, oldId, participantId);
-          replaceIdInHash(win, oldId, participantId);
-          console.log("ADD VIDEO, replace hash", win.location.hash, oldId, participantId);
-          return true;
-        }
+    if (emptyWrappers) {
+      // Get emptyWrappers in DOM order
+      const sortedEmptyWrappers = Array.from(
+        sidebar.querySelectorAll(".video-wrapper")
+      ).filter((element) => {
+        return emptyWrappers.indexOf(element) !== -1;
       });
+      // Get first empty wrapper
+      videoWrapper = sortedEmptyWrappers.shift();
+      if (videoWrapper) {
+        // Also remove from the array in our map
+        const index = emptyWrappers.indexOf(videoWrapper);
+        if (index !== -1) {
+          emptyWrappers.splice(index, 1);
+        }
+        // We're reusing a wrapper with a new participantId,
+        // update the map
+
+        const oldId = getByValue(
+          participantIdToSidebarVideoWrapper,
+          videoWrapper
+        );
+
+        videoId = getByValue(videoIdToParticipantId, oldId);
+        videoIdToParticipantId.set(videoId, participantId);
+        participantIdToDisplayName.delete(oldId);
+        participantIdToSidebarVideoWrapper.delete(oldId);
+        // Update all windows and iframes
+        bc.postMessage({
+          participantIdReplace: { oldId: oldId, newId: participantId },
+        });
+      }
     }
   }
 
@@ -143,16 +140,8 @@ const addVideo = (participantId, displayName) => {
     videoWrapper.classList.add("video-wrapper");
     videoId = videoIdCounter++;
     videoIdToParticipantId.set(videoId, participantId);
-    console.log(
-      "ADD VIDEO, make new wrapper",
-      videoId,
-      participantId,
-      new Map(videoIdToParticipantId)
-    );
     videoWrapper.addEventListener("click", () => {
-      // Use a fixed videoId, so we'll always open the same window when clicking this wrapper.
-      // But get the current participantId (may have changed).
-      console.log(videoIdToParticipantId, videoId);
+      // Use the fixed videoId, so we'll always open the same window when clicking this wrapper.
       popOutVideo(videoId);
     });
     sidebar.appendChild(videoWrapper);
@@ -162,21 +151,34 @@ const addVideo = (participantId, displayName) => {
   videoWrapper.setAttribute("data-displayname", displayName);
 
   // Always remove the iframe from the wrapper, if it exists
-  removeVideo(null, videoWrapper);
+  // removeVideo(null, videoWrapper);
 
   const targetFrame = document.createElement("iframe");
+  targetFrame.src = getVideoDocUrl(videoId);
   videoWrapper.appendChild(targetFrame);
-  targetFrame.contentWindow.location = getVideoDocUrl(participantId);
+  // setting the src to a url with about:blank + hash doesn't trigger a load
   targetFrame.contentWindow.location.reload();
 };
 
-const removeVideo = (participantId, videoWrapper) => {
-  if (participantId && !videoWrapper) {
-    videoWrapper = participantIdToSidebarVideoWrapper.get(participantId);
+// const removeVideo = (participantId, videoWrapper) => {
+//   if (participantId && !videoWrapper) {
+//     videoWrapper = participantIdToSidebarVideoWrapper.get(participantId);
+//   }
+//   if (!videoWrapper) {
+//     return;
+//   }
+
+const removeVideo = (participantId) => {
+  if (!participantId) {
+    return;
   }
+
+  const videoWrapper = participantIdToSidebarVideoWrapper.get(participantId);
+
   if (!videoWrapper) {
     return;
   }
+
   const targetFrame = videoWrapper.querySelector("iframe");
   if (!targetFrame) {
     return;
