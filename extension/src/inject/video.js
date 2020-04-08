@@ -25,10 +25,6 @@ const hashToUrlParams = (hash) => {
   return new URLSearchParams("?" + hash.substring(2).replace(/\//g, "&"));
 };
 
-const urlParamsToHash = (urlParams) => {
-  return urlParams.toString().substring(1).replace(/&/g, "/");
-};
-
 const displayNameChangeHandler = (e) => {
   if (e.id === id) {
     displayName = e.displayname;
