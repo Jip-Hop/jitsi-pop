@@ -64,11 +64,10 @@ const closeMainAppWindowObject = () => {
   }
 };
 
-window.openPopout = (displayName, newRoomName) => {
+window.openPopout = (newRoomName) => {
   roomName = newRoomName;
   domain = servers[selectedServerIndex];
   localStorage.setItem("serverSelect", selectedServerIndex);
-  localStorage.setItem("displayName", displayName);
 
   let recentRoomNames = JSON.parse(localStorage.getItem("recentRooms")) || [];
   // If roomName is already in the list, get rid of it
@@ -77,7 +76,7 @@ window.openPopout = (displayName, newRoomName) => {
   recentRoomNames.unshift({ roomName: roomName, timestamp: Date.now() });
   localStorage.setItem("recentRooms", JSON.stringify(recentRoomNames));
 
-  openedUrl = `https://${domain}/#/extId=${extId}/displayName=${displayName}/roomName=${roomName}`;
+  openedUrl = `https://${domain}/#/extId=${extId}/roomName=${roomName}`;
   window.mainAppWindowObject = window.open(
     openedUrl,
     windowTarget,
@@ -162,8 +161,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         tryUpdate(sender.tab.windowId, { state: newState });
       }
     });
-  } else if (message.type === "displayNameChange") {
-    localStorage.setItem("displayName", message.displayName);
   } else if (message.type === "videoConferenceLeft") {
     setConnectionState(0);
   } else if (message.type === "videoConferenceJoined") {
@@ -195,16 +192,11 @@ chrome.runtime.onMessageExternal.addListener(function(
           }
         });
 
-        // TODO: how to ensure there's a displayName now...?
-
         if (focusOnly) {
           focusAllWindows();
         } else {
           selectedServerIndex = serverIndex;
-          openPopout(
-            localStorage.getItem("displayName") || "",
-            message.roomName
-          );
+          openPopout(message.roomName);
         }
       };
 

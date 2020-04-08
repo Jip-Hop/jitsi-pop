@@ -3,7 +3,6 @@ const background = chrome.extension.getBackgroundPage();
 const servers = background.servers;
 
 const serverSelect = document.getElementById("server-select");
-const nicknameInput = document.getElementById("nickname");
 const roomnameInput = document.getElementById("roomname");
 const recentRoomsDatalist = document.getElementById("recent_rooms_list");
 const recentRoomsInput = document.getElementById("recent_rooms_input");
@@ -22,7 +21,7 @@ serverSelect.innerHTML = servers.map((server, index) => {
 
 const handleInConference = () => {
   submitButton.value = "Close";
-  document.querySelectorAll("input, select").forEach(input => {
+  document.querySelectorAll("input, select").forEach((input) => {
     if (input.type === "submit") return;
     input.disabled = true;
   });
@@ -31,7 +30,7 @@ const handleInConference = () => {
 
 const handleNotInConference = () => {
   submitButton.value = "Enter";
-  document.querySelectorAll("input, select").forEach(input => {
+  document.querySelectorAll("input, select").forEach((input) => {
     if (input.type === "submit") return;
     input.disabled = false;
   });
@@ -52,7 +51,7 @@ const generate = (length = 12) =>
     )
     .join("");
 
-const setServerValue = value => {
+const setServerValue = (value) => {
   // Range check
   value = parseInt(value);
   if (value >= 0 && value < servers.length) {
@@ -69,18 +68,18 @@ const setValue = (input, value) => {
   }
 };
 
-randomButton.onclick = e => {
+randomButton.onclick = (e) => {
   setValue(roomnameInput, generate(12));
 };
 
-link.onclick = e => {
+link.onclick = (e) => {
   e.preventDefault();
   const tmpString = "Copied!";
   navigator.clipboard
     .writeText(
-      `https://jitsipop.tk/#/${
-        servers[background.selectedServerIndex]
-      }/${roomnameInput.value}`
+      `https://jitsipop.tk/#/${servers[background.selectedServerIndex]}/${
+        roomnameInput.value
+      }`
     )
     .then(
       () => {
@@ -92,35 +91,28 @@ link.onclick = e => {
           }, 1000);
         }
       },
-      err => {
+      (err) => {
         console.error("Async: Could not copy text: ", err);
       }
     );
 };
 
 // Set values from local storage
-nicknameInput.value = localStorage.getItem("displayName") || "";
 setValue(
   roomnameInput,
   (recentRoomNames.length && recentRoomNames[0].roomName) || ""
 );
 setServerValue(localStorage.getItem("serverSelect"));
 
-nicknameInput.title = `Please choose a nickname that's not "${background.options.interfaceConfigOverwrite.DEFAULT_REMOTE_DISPLAY_NAME}" or only whitespace.`;
-nicknameInput.pattern =
-  "^((?!^" +
-  background.options.interfaceConfigOverwrite.DEFAULT_REMOTE_DISPLAY_NAME +
-  "\\s*$)(?!^\\s).)*$";
-
 if (recentRoomNames.length) {
-  recentRoomsDatalist.innerHTML = recentRoomNames.map(d => {
+  recentRoomsDatalist.innerHTML = recentRoomNames.map((d) => {
     const date = new Date(d.timestamp);
     return `<option value="${
       d.roomName
     }">${date.toLocaleDateString()} ${date.toLocaleTimeString()}</option>`;
   });
 
-  recentRoomsInput.oninput = e => {
+  recentRoomsInput.oninput = (e) => {
     if (e.inputType === "insertText") {
       roomnameInput.focus();
       setValue(roomnameInput, roomnameInput.value + e.data);
@@ -134,18 +126,18 @@ if (recentRoomNames.length) {
   recentRoomsInput.style.display = "none";
 }
 
-document.querySelector("form").onsubmit = e => {
+document.querySelector("form").onsubmit = (e) => {
   e.preventDefault();
   if (document.body.classList.contains("in-conference")) {
     background.disconnect();
   } else {
     background.selectedServerIndex = parseInt(serverSelect.value);
-    background.openPopout(nicknameInput.value, roomnameInput.value);
+    background.openPopout(roomnameInput.value);
   }
   window.close();
 };
 
-document.addEventListener("keydown", e => {
+document.addEventListener("keydown", (e) => {
   if (e.keyCode == "13") {
     e.preventDefault();
     if (
@@ -159,13 +151,13 @@ document.addEventListener("keydown", e => {
   }
 });
 
-showButton.onclick = e => {
+showButton.onclick = (e) => {
   e.preventDefault();
   background.focusAllWindows();
   window.close();
 };
 
-chrome.runtime.onMessage.addListener(function(message) {
+chrome.runtime.onMessage.addListener(function (message) {
   if (message.type === "videoConferenceJoined") {
     handleInConference();
   } else if (message.type === "videoConferenceLeft") {
@@ -173,10 +165,8 @@ chrome.runtime.onMessage.addListener(function(message) {
   }
 });
 
-window.addEventListener("storage", function(e) {
-  if (e.key === "displayName") {
-    nicknameInput.value = e.newValue;
-  } else if (e.key === "serverSelect") {
+window.addEventListener("storage", function (e) {
+  if (e.key === "serverSelect") {
     setServerValue(e.newValue);
   }
 });

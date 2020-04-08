@@ -23,13 +23,6 @@ const replaceIdInHref = (win, oldId, id) => {
   win.location.href = win.location.href.replace(`id=${oldId}`, `id=${id}`);
 };
 
-const replaceDisplayNameInHref = (win, oldDisplayName, displayName) => {
-  win.location.href = win.location.href.replace(
-    `displayName=${oldDisplayName}`,
-    `displayName=${displayName}`
-  );
-};
-
 const popOutVideo = (id, displayName, windowId) => {
   const win = window.open(
     getVideoDocUrl(id, displayName),
@@ -143,8 +136,6 @@ const setup = () => {
 
   window.api = new JitsiMeetExternalAPI(window.location.hostname, options);
 
-  myDisplayName = urlParams.get("displayName");
-  api.executeCommand("displayName", myDisplayName);
   api.executeCommand("subject", " ");
 
   // Hide filmStrip once on startup
@@ -222,14 +213,13 @@ const setup = () => {
         e.displayname !==
           options.interfaceConfigOverwrite.DEFAULT_REMOTE_DISPLAY_NAME
       ) {
-        replaceDisplayNameInHref(window, myDisplayName, e.displayname);
+        
         myDisplayName = e.displayname;
-        tryRuntimeSendMessage({
-          type: "displayNameChange",
-          displayName: myDisplayName
-        });
       } else {
-        api.executeCommand("displayName", myDisplayName);
+        // TODO: warn user, but don't reset displayName here
+        // Could cause loops etc.
+        // Also check if it's a unique name in the room.
+        // api.executeCommand("displayName", myDisplayName);
       }
     } else {
       // For remote users
