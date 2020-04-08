@@ -12,7 +12,6 @@ const api = mainWindow.api;
 var sourceVid, targetVid, displayName, id;
 
 const setTitle = () => {
-  console.log(displayName);
   document.title = "Jitsi Meet | " + displayName;
 };
 
@@ -31,12 +30,9 @@ const urlParamsToHash = (urlParams) => {
 };
 
 const displayNameChangeHandler = (e) => {
-  console.log("Name changed");
   if (e.id === id) {
-    console.log("My name changed", displayName, e.displayname);
-    const urlParams = hashToUrlParams(location.hash);
-    urlParams.set("displayName", e.displayname);
-    location.hash = urlParamsToHash(urlParams);
+    displayName = e.displayname;
+    setTitle();
   }
 };
 
@@ -80,8 +76,7 @@ const setup = () => {
     return;
   }
 
-  displayName = urlParams.get("displayName");
-  console.log(urlParams.get("displayName"));
+  displayName = mainWindow.getFormattedDisplayName(id);
   setTitle();
 
   // Only run some setup code once
@@ -95,18 +90,21 @@ const setup = () => {
 
     // Keep source and target in sync
     setInterval(syncVideo, 1000);
-    api.addEventListener("displayNameChange", displayNameChangeHandler);
 
     if (inPopup) {
       if (mainWindow && !mainWindow.closed && mainWindow.windows) {
         mainWindow.windows.push(window);
       }
-      console.log(mainWindow.windows);
 
       const bc = new BroadcastChannel("popout_jitsi_channel");
 
+      bc.onmessage = (e) => {
+        if (e.data.displayNameChange) {
+          displayNameChangeHandler(e.data.displayNameChange);
+        }
+      };
+
       window.onunload = () => {
-        api.removeEventListener("displayNameChange", displayNameChangeHandler);
         // Remove this window from the array of open pop-outs in the main window
         if (mainWindow && !mainWindow.closed && mainWindow.windows) {
           mainWindow.windows = mainWindow.windows.filter((win) => {

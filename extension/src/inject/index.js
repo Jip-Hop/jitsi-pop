@@ -1,4 +1,4 @@
-var options;
+var options = {};
 
 const toolbarHeight = window.outerHeight - window.innerHeight;
 const popupWidth = 480;
@@ -15,20 +15,29 @@ window.mainWindow = window;
 window.windows = [];
 var windowIdCounter = 0;
 var myDisplayName;
+const idToDisplayName = new Map();
 
-const getVideoDocUrl = (id, displayName) => {
-  return `about:blank#/extId=${extId}/id=${id}/displayName=${encodeURIComponent(
-    displayName
-  )}/fit=cover`;
+const formatDisplayName = (displayName) => {
+  return displayName && displayName !== ""
+    ? displayName
+    : options.interfaceConfigOverwrite.DEFAULT_REMOTE_DISPLAY_NAME;
+};
+
+window.getFormattedDisplayName = (id) => {
+  return formatDisplayName(idToDisplayName.get(id));
+};
+
+const getVideoDocUrl = (id) => {
+  return `about:blank#/extId=${extId}/id=${id}/fit=cover`;
 };
 
 const replaceIdInHash = (win, oldId, id) => {
   win.location.hash = win.location.hash.replace(`id=${oldId}`, `id=${id}`);
 };
 
-const popOutVideo = (id, displayName, windowId) => {
+const popOutVideo = (id, windowId) => {
   const win = window.open(
-    getVideoDocUrl(id, displayName),
+    getVideoDocUrl(id),
     windowId,
     `status=no,menubar=no,width=${popupWidth},height=${popupHeight},left=${
       screen.left + xOffset
@@ -47,11 +56,14 @@ const popOutVideo = (id, displayName, windowId) => {
       yOffset = 0;
     }
 
+    // Don't push here, but from the pop-up window itself.
+    // Then we also add it back on window reload.
     // windows.push(win);
   }
 };
 
-const addVideo = (id) => {
+const addVideo = (id, displayName) => {
+  idToDisplayName.set(id, displayName);
   const participant = api._participants[id];
 
   // The participant must already have left the conference...
@@ -63,13 +75,12 @@ const addVideo = (id) => {
 
   if (!sourceVideo) {
     // Wait for sourceVideo to appear
-    setTimeout(() => addVideo(id), 1000);
+    setTimeout(() => addVideo(id, displayName), 1000);
     return;
   }
 
-  const displayName =
-    participant.displayName ||
-    options.interfaceConfigOverwrite.DEFAULT_REMOTE_DISPLAY_NAME;
+  displayName = formatDisplayName(displayName);
+
   // Search for existing wrapper which matches id
   var videoWrapper = sidebar.querySelector(`.video-wrapper[data-id="${id}"]`);
 
@@ -99,8 +110,9 @@ const addVideo = (id) => {
     videoWrapper.classList.add("video-wrapper");
     const windowId = windowIdCounter++;
     videoWrapper.addEventListener("click", () => {
-      // Use a fixed windowId, so we'll always open the same window when clicking this wrapper
-      popOutVideo(id, videoWrapper.dataset.displayname, windowId);
+      // Use a fixed windowId, so we'll always open the same window when clicking this wrapper.
+      // But read videoWrapper.dataset.id for the current id (may have changed).
+      popOutVideo(videoWrapper.dataset.id, windowId);
     });
     sidebar.appendChild(videoWrapper);
   }
@@ -113,7 +125,7 @@ const addVideo = (id) => {
 
   const targetFrame = document.createElement("iframe");
   videoWrapper.appendChild(targetFrame);
-  targetFrame.contentWindow.location = getVideoDocUrl(id, displayName);
+  targetFrame.contentWindow.location = getVideoDocUrl(id);
   targetFrame.contentWindow.location.reload();
 };
 
@@ -163,7 +175,7 @@ const setup = () => {
       type: "videoConferenceJoined",
     });
 
-    addVideo(e.id);
+    addVideo(e.id, e.displayName);
 
     // TODO: wait a little, then ask everyone if one of them is moderator.
     // If no moderator yet, start moderating and check display name of each participant.
@@ -210,14 +222,17 @@ const setup = () => {
   };
 
   api.addEventListener("displayNameChange", (e) => {
+    idToDisplayName.set(e.id, e.displayname);
+    bc.postMessage({ displayNameChange: e });
     // For local user
     if (e.id === api._myUserID) {
+      myDisplayName = e.displayname;
       if (
         e.displayname !== "" &&
         e.displayname !==
           options.interfaceConfigOverwrite.DEFAULT_REMOTE_DISPLAY_NAME
       ) {
-        myDisplayName = e.displayname;
+        // This displayName is fine...
       } else {
         // TODO: warn user, but don't reset displayName here
         // Could cause loops etc.
@@ -245,11 +260,13 @@ const setup = () => {
 
   api.addEventListener("participantJoined", (e) => {
     displayNameWarning(e.id, e.displayName);
-
-    addVideo(e.id);
+    addVideo(e.id, e.displayName);
   });
 
   api.addEventListener("participantLeft", (e) => {
+    // Don't delete from map, only delete after we've removed the
+    // offline participant from the sidebar and all its windows are closed
+    // idToDisplayName.delete(e.id);
     removeVideo(e.id);
   });
 
