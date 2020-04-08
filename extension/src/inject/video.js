@@ -62,6 +62,8 @@ const syncVideo = () => {
 };
 
 const setup = () => {
+  // Don't listen to hash change, should be using my own static id,
+  // an id that doesn't change and can be used to retrieve current participantId and name
   window.onhashchange = setup;
 
   const urlParams = hashToUrlParams(location.hash);
@@ -145,3 +147,5 @@ const setup = () => {
 if (inIframe || inPopup) {
   setup();
 }
+
+// TODO: setup bc channel first, then request all the values from mainWindow, else I may miss messages

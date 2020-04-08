@@ -13,9 +13,12 @@ const bc = new BroadcastChannel("popout_jitsi_channel");
 
 window.mainWindow = window;
 window.windows = [];
-var windowIdCounter = 0;
+var videoIdCounter = 0;
 var myDisplayName;
-const idToDisplayName = new Map();
+const participantIdToSidebarVideoWrapper = new Map();
+const displayNameToEmptyWrappers = new Map();
+const participantIdToDisplayName = new Map();
+const videoIdToParticipantId = new Map();
 
 const formatDisplayName = (displayName) => {
   return displayName && displayName !== ""
@@ -24,21 +27,32 @@ const formatDisplayName = (displayName) => {
 };
 
 window.getFormattedDisplayName = (id) => {
-  return formatDisplayName(idToDisplayName.get(id));
+  return formatDisplayName(participantIdToDisplayName.get(id));
+};
+
+const getByValue = (map, searchValue) => {
+  for (let [key, value] of map) {
+    if (value === searchValue) return key;
+  }
 };
 
 const getVideoDocUrl = (id) => {
   return `about:blank#/extId=${extId}/id=${id}/fit=cover`;
 };
 
+// TODO: I can't rely on replaceIdInHash, especially not when we have
+// pop-up windows, iframes in the sidebar, and iframes in a pop-up window (multiview)
+// and they all need to keep in sync.
+// Need to use my own id system and tie the current displayName and current participantId to it.
 const replaceIdInHash = (win, oldId, id) => {
   win.location.hash = win.location.hash.replace(`id=${oldId}`, `id=${id}`);
 };
 
-const popOutVideo = (id, windowId) => {
+const popOutVideo = (videoId) => {
+  const participantId = videoIdToParticipantId.get(videoId);
   const win = window.open(
-    getVideoDocUrl(id),
-    windowId,
+    getVideoDocUrl(participantId),
+    videoId,
     `status=no,menubar=no,width=${popupWidth},height=${popupHeight},left=${
       screen.left + xOffset
     },top=${screen.top + yOffset}`
@@ -62,42 +76,61 @@ const popOutVideo = (id, windowId) => {
   }
 };
 
-const addVideo = (id, displayName) => {
-  idToDisplayName.set(id, displayName);
-  const participant = api._participants[id];
+const addVideo = (participantId, displayName) => {
+  console.log("ADD VIDEO", participantId, displayName);
+  const participant = api._participants[participantId];
 
   // The participant must already have left the conference...
   if (!participant) {
     return;
   }
 
-  const sourceVideo = api._getParticipantVideo(id);
+  const sourceVideo = api._getParticipantVideo(participantId);
 
   if (!sourceVideo) {
     // Wait for sourceVideo to appear
-    setTimeout(() => addVideo(id, displayName), 1000);
+    setTimeout(() => addVideo(participantId, displayName), 1000);
     return;
   }
 
+  // TODO: don't directly call set, make a function to do it and notify via bc channel,
+  // perhaps make dedicated bc channel for video pages and one for the jitsiFrame
+  participantIdToDisplayName.set(participantId, displayName);
   displayName = formatDisplayName(displayName);
 
-  // Search for existing wrapper which matches id
-  var videoWrapper = sidebar.querySelector(`.video-wrapper[data-id="${id}"]`);
+  // Search for existing wrapper which matches participantId
+  // var videoWrapper = sidebar.querySelector(`.video-wrapper[data-participantId="${participantId}"]`);
+  var videoWrapper = participantIdToSidebarVideoWrapper.get(participantId);
+  var videoId;
 
   // Check if we can reuse an empty wrapper for same username
   if (!videoWrapper) {
-    videoWrapper = sidebar.querySelector(
-      `.video-wrapper[data-displayname="${displayName}"]:empty`
-    );
+    const emptyWrappers = displayNameToEmptyWrappers.get(displayName);
+    console.log("ADD VIDEO emptyWrappers", new Array(emptyWrappers));
+    videoWrapper = emptyWrappers ? emptyWrappers.shift() : null;
+    console.log("ADD VIDEO videoWrapper", videoWrapper);
     if (videoWrapper) {
-      // We're reusing a wrapper with a new participant id,
-      // also update the pop out windows
-      const oldId = videoWrapper.dataset.id;
+      // We're reusing a wrapper with a new participantId,
+      // update the map
+      const oldId = getByValue(participantIdToSidebarVideoWrapper, videoWrapper);
+      const videoId = getByValue(videoIdToParticipantId, oldId);
+      // TODO: don't call set directly but make a function and ping changed via bc
+      videoIdToParticipantId.set(videoId, participantId);
+      console.log(
+        "ADD VIDEO, replace wrapper",
+        videoId,
+        participantId,
+        new Map(videoIdToParticipantId)
+      );
+      // Also update the pop out windows
 
       // Keep only the open windows and replace their href
+      // TODO: ping via bc channel, but never change hash
       windows = windows.filter(function (win) {
         if (!win.closed) {
-          replaceIdInHash(win, oldId, id);
+          console.log("ADD VIDEO, replace hash", win.location.hash, oldId, participantId);
+          replaceIdInHash(win, oldId, participantId);
+          console.log("ADD VIDEO, replace hash", win.location.hash, oldId, participantId);
           return true;
         }
       });
@@ -108,16 +141,24 @@ const addVideo = (id, displayName) => {
   if (!videoWrapper) {
     videoWrapper = document.createElement("div");
     videoWrapper.classList.add("video-wrapper");
-    const windowId = windowIdCounter++;
+    videoId = videoIdCounter++;
+    videoIdToParticipantId.set(videoId, participantId);
+    console.log(
+      "ADD VIDEO, make new wrapper",
+      videoId,
+      participantId,
+      new Map(videoIdToParticipantId)
+    );
     videoWrapper.addEventListener("click", () => {
-      // Use a fixed windowId, so we'll always open the same window when clicking this wrapper.
-      // But read videoWrapper.dataset.id for the current id (may have changed).
-      popOutVideo(videoWrapper.dataset.id, windowId);
+      // Use a fixed videoId, so we'll always open the same window when clicking this wrapper.
+      // But get the current participantId (may have changed).
+      console.log(videoIdToParticipantId, videoId);
+      popOutVideo(videoId);
     });
     sidebar.appendChild(videoWrapper);
   }
 
-  videoWrapper.setAttribute("data-id", id);
+  participantIdToSidebarVideoWrapper.set(participantId, videoWrapper);
   videoWrapper.setAttribute("data-displayname", displayName);
 
   // Always remove the iframe from the wrapper, if it exists
@@ -125,13 +166,13 @@ const addVideo = (id, displayName) => {
 
   const targetFrame = document.createElement("iframe");
   videoWrapper.appendChild(targetFrame);
-  targetFrame.contentWindow.location = getVideoDocUrl(id);
+  targetFrame.contentWindow.location = getVideoDocUrl(participantId);
   targetFrame.contentWindow.location.reload();
 };
 
-const removeVideo = (id, videoWrapper) => {
-  if (id && !videoWrapper) {
-    videoWrapper = sidebar.querySelector(`.video-wrapper[data-id="${id}"]`);
+const removeVideo = (participantId, videoWrapper) => {
+  if (participantId && !videoWrapper) {
+    videoWrapper = participantIdToSidebarVideoWrapper.get(participantId);
   }
   if (!videoWrapper) {
     return;
@@ -141,6 +182,12 @@ const removeVideo = (id, videoWrapper) => {
     return;
   }
   targetFrame.remove();
+  const displayName = participantIdToDisplayName.get(participantId);
+  if (!displayNameToEmptyWrappers.has(displayName)) {
+    displayNameToEmptyWrappers.set(displayName, [videoWrapper]);
+  } else {
+    displayNameToEmptyWrappers.get(displayName).push(videoWrapper);
+  }
 };
 
 const setup = () => {
@@ -222,7 +269,7 @@ const setup = () => {
   };
 
   api.addEventListener("displayNameChange", (e) => {
-    idToDisplayName.set(e.id, e.displayname);
+    participantIdToDisplayName.set(e.id, e.displayname);
     bc.postMessage({ displayNameChange: e });
     // For local user
     if (e.id === api._myUserID) {
@@ -245,15 +292,12 @@ const setup = () => {
     }
 
     // Always update to current state
-    const videoWrapper = sidebar.querySelector(
-      `.video-wrapper[data-id="${e.id}"]`
-    );
+    const videoWrapper = participantIdToSidebarVideoWrapper.get(e.id);
 
     if (videoWrapper) {
       videoWrapper.setAttribute(
         "data-displayname",
-        e.displayname ||
-          options.interfaceConfigOverwrite.DEFAULT_REMOTE_DISPLAY_NAME
+        formatDisplayName(e.displayname)
       );
     }
   });
@@ -266,7 +310,7 @@ const setup = () => {
   api.addEventListener("participantLeft", (e) => {
     // Don't delete from map, only delete after we've removed the
     // offline participant from the sidebar and all its windows are closed
-    // idToDisplayName.delete(e.id);
+    // participantIdToDisplayName.delete(e.id);
     removeVideo(e.id);
   });
 
