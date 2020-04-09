@@ -1,6 +1,5 @@
 // Declare jitsipop API object
 const jitsipop = {};
-const windows = [];
 
 const database = new Map([
   /* Data structure example
@@ -12,8 +11,8 @@ const database = new Map([
         participantId: "asdfgh", // unique
         sidebarVideoWrapper: "html element", // unique
         online: true,
-        iframes: ["iframe window object"], // each iframe window object in the array is unique
-        windows: ["pop-out window object"], // each pop-out window object in the array is unique
+        iframes: Set ["iframe window object"], // each iframe window object in the Set is unique
+        windows: Set ["pop-out window object"], // each pop-out window object in the Set is unique
       },
     ],
     */
@@ -36,11 +35,78 @@ const bc = new BroadcastChannel("popout_jitsi_channel");
 var videoIdCounter = 0;
 var myDisplayName;
 
+const receiveHighRes = (participantId, shouldReceiveHighRes) => {
+  if(shouldReceiveHighRes) {
+    bc.postMessage({ select: participantId });
+  } else {
+    bc.postMessage({ deselect: participantId });
+  }
+}
+
 const getParticipantVideo = (participantId) => {
   if (api && api._getParticipantVideo) {
     return api._getParticipantVideo(participantId);
   }
 };
+
+const getItem = (videoId) => {
+  return database.get(videoId);
+}
+
+const addIframe = (videoId, iframe) => {
+  const item = getItem(videoId);
+  if(item && item.iframes){
+    item.iframes.add(iframe);
+  } else {
+    console.trace("Couldn't add iframe for videoId", videoId, item);
+  }
+}
+
+const removeIframe = (videoId, iframe) => {
+  const item = getItem(videoId);
+  if(item && item.iframes && item.iframes.has(iframe)){
+    item.iframes.delete(iframe);
+  } else {
+    console.trace("Couldn't delete iframe for videoId", videoId, item);
+  }
+}
+
+const addWindow = (videoId, window) => {
+  const item = getItem(videoId);
+  if(item && item.windows){
+    item.windows.add(window);
+  } else {
+    console.trace("Couldn't add window for videoId", videoId, item);
+  }
+}
+
+const removeWindow = (videoId, window) => {
+  const item = getItem(videoId);
+  if(item && item.windows && item.windows.has(window)){
+    item.windows.delete(window);
+  } else {
+    console.trace("Couldn't delete window for videoId", videoId, item);
+  }
+}
+
+const closeAllWindows = () => {
+  // TODO: also close multiview window in the future
+  for (let item of database.values()) {
+    if(item.windows){
+      for (let win of item.windows) {
+        win.close();
+      }
+    }
+  }
+}
+
+const windowAlreadyOpen = (newWin) => {
+  for (let item of database.values()) {
+    if(item.windows && item.windows.has(newWin)){
+      return true;
+    }
+  }
+}
 
 const formatDisplayName = (displayName) => {
   return displayName && displayName !== ""
@@ -103,7 +169,7 @@ const popOutVideo = (videoId) => {
   );
 
   // We made a new window
-  if (windows.indexOf(win) === -1) {
+  if (!windowAlreadyOpen(win)) {
     xOffset += popupWidth;
     if (xOffset + popupWidth > screen.width) {
       xOffset = 0;
@@ -113,10 +179,6 @@ const popOutVideo = (videoId) => {
       xOffset = 0;
       yOffset = 0;
     }
-
-    // Don't push here, but from the pop-up window itself.
-    // Then we also add it back on window reload.
-    // windows.push(win);
   }
 };
 
@@ -246,8 +308,8 @@ const videoOnlineHandler = (participantId) => {
     targetFrame.contentWindow.location.reload();
 
     // Init all other values for database item here
-    newData.iframes = [];
-    newData.windows = [];
+    newData.iframes = new Set();
+    newData.windows = new Set();
     // TODO: actually fill these arrays, via an API call, from inside the windows and iframes when they're opened
   }
 
@@ -415,20 +477,20 @@ const setup = () => {
     e.returnValue = "";
   };
 
-  window.onunload = () => {
-    windows.forEach((win) => {
-      win.close();
-    });
-  };
+  window.onunload = () => closeAllWindows;
 };
 
 // Expose API
 window.jitsipop = jitsipop;
 jitsipop.mainWindow = window;
-jitsipop.windows = windows;
 jitsipop.getFormattedDisplayName = getFormattedDisplayName;
 jitsipop.getParticipantId = getParticipantId;
 jitsipop.getParticipantVideo = getParticipantVideo;
+jitsipop.receiveHighRes = receiveHighRes;
+jitsipop.addIframe = addIframe;
+jitsipop.removeIframe = removeIframe;
+jitsipop.addWindow = addWindow;
+jitsipop.removeWindow = removeWindow;
 
 tryRuntimeSendMessage(
   {

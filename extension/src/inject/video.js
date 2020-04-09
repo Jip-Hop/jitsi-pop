@@ -4,9 +4,9 @@
 const inIframe = self !== top;
 const inPopup = window.opener !== null && window.opener !== window;
 
-const jitsipop = window.jitsipop = inPopup
+const jitsipop = (window.jitsipop = inPopup
   ? window.opener.jitsipop
-  : window.parent.jitsipop;
+  : window.parent.jitsipop);
 
 const mainWindow = jitsipop.mainWindow;
 
@@ -95,16 +95,17 @@ const setup = () => {
 
   window.onunload = () => {
     // Remove this window from the array of open pop-outs in the main window
-    if (mainWindow && !mainWindow.closed && jitsipop.windows) {
-      jitsipop.windows = jitsipop.windows.filter((win) => {
-        return win !== window;
-      });
+    if (mainWindow && !mainWindow.closed) {
+      if (inPopup) {
+        jitsipop.removeWindow(videoId, window);
+      } else if (inIframe) {
+        jitsipop.removeIframe(videoId, window);
+      }
     }
 
-    if (inPopup) {
-      bc.postMessage({ deselect: participantId });
-    }
-
+    // TODO: needs a counter somewhere, because if it's open in multiview (not implemented yet),
+    // and open in a pop-out window, it needs to still receive high res if only one of them is closed
+    jitsipop.receiveHighRes(participantId, false);
     bc.close();
   };
 
@@ -120,16 +121,16 @@ const setup = () => {
   setInterval(syncVideo, 1000);
 
   if (inPopup) {
-    if (mainWindow && !mainWindow.closed && jitsipop.windows) {
-      jitsipop.windows.push(window);
+    if (mainWindow && !mainWindow.closed) {
+      // jitsipop.windows.push(window);
+      jitsipop.addWindow(videoId, window);
     }
 
     tryRuntimeSendMessage({
       type: "videoWinLoad",
     });
 
-    // Send message to Jitsi frame
-    bc.postMessage({ select: participantId });
+    jitsipop.receiveHighRes(participantId, true);
 
     document.documentElement.addEventListener("keyup", function (event) {
       // Number 13 is the "Enter" key on the keyboard,
@@ -145,6 +146,10 @@ const setup = () => {
         });
       }
     });
+  } else if (inIframe) {
+    if (mainWindow && !mainWindow.closed) {
+      jitsipop.addIframe(videoId, window);
+    }
   }
 };
 
