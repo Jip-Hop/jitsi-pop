@@ -10,7 +10,7 @@ const jitsipop = (window.jitsipop = inPopup
 
 const mainWindow = jitsipop.mainWindow;
 
-var sourceVid, targetVid, displayName, participantId, videoId, bc;
+var sourceVid, targetVid, displayName, participantId, videoId /*, bc*/;
 
 const syncSource = () => {
   if (targetVid.srcObject !== sourceVid.srcObject) {
@@ -51,11 +51,14 @@ const setTitle = () => {
   document.title = "Jitsi Meet | " + displayName;
 };
 
-const displayNameChangeHandler = (e) => {
-  if (e.id === participantId) {
-    displayName = e.displayname;
-    setTitle();
-  }
+const displayNameChangeHandler = (newDisplayName) => {
+  displayName = newDisplayName;
+  setTitle();
+};
+
+const participantIdReplaceHandler = (newParticipantId) => {
+  participantId = newParticipantId;
+  update();
 };
 
 const update = () => {
@@ -70,7 +73,10 @@ const hashToUrlParams = (hash) => {
 };
 
 const setup = () => {
-  bc = new BroadcastChannel("popout_jitsi_channel");
+  // Allow calling these functions from mainWindow
+  window.displayNameChangeHandler = displayNameChangeHandler;
+  window.participantIdReplaceHandler = participantIdReplaceHandler;
+  // bc = new BroadcastChannel("popout_jitsi_channel");
 
   const urlParams = hashToUrlParams(location.hash);
   videoId = urlParams.get("id");
@@ -81,17 +87,17 @@ const setup = () => {
 
   videoId = parseInt(videoId);
 
-  bc.onmessage = (e) => {
-    if (e.data.displayNameChange) {
-      displayNameChangeHandler(e.data.displayNameChange);
-    } else if (
-      e.data.participantIdReplace &&
-      e.data.participantIdReplace.oldId === participantId
-    ) {
-      participantId = e.data.participantIdReplace.newId;
-      update();
-    }
-  };
+  // bc.onmessage = (e) => {
+  //   if (e.data.displayNameChange) {
+  //     displayNameChangeHandler(e.data.displayNameChange);
+  //   } else if (
+  //     e.data.participantIdReplace &&
+  //     e.data.participantIdReplace.oldId === participantId
+  //   ) {
+  //     participantId = e.data.participantIdReplace.newId;
+  //     update();
+  //   }
+  // };
 
   window.onunload = () => {
     // Remove this window from the array of open pop-outs in the main window
@@ -106,7 +112,7 @@ const setup = () => {
     // TODO: needs a counter somewhere, because if it's open in multiview (not implemented yet),
     // and open in a pop-out window, it needs to still receive high res if only one of them is closed
     jitsipop.receiveHighRes(participantId, false);
-    bc.close();
+    // bc.close();
   };
 
   targetVid = document.createElement("video");

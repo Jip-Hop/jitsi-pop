@@ -36,12 +36,12 @@ var videoIdCounter = 0;
 var myDisplayName;
 
 const receiveHighRes = (participantId, shouldReceiveHighRes) => {
-  if(shouldReceiveHighRes) {
+  if (shouldReceiveHighRes) {
     bc.postMessage({ select: participantId });
   } else {
     bc.postMessage({ deselect: participantId });
   }
-}
+};
 
 const getParticipantVideo = (participantId) => {
   if (api && api._getParticipantVideo) {
@@ -51,62 +51,62 @@ const getParticipantVideo = (participantId) => {
 
 const getItem = (videoId) => {
   return database.get(videoId);
-}
+};
 
 const addIframe = (videoId, iframe) => {
   const item = getItem(videoId);
-  if(item && item.iframes){
+  if (item && item.iframes) {
     item.iframes.add(iframe);
   } else {
     console.trace("Couldn't add iframe for videoId", videoId, item);
   }
-}
+};
 
 const removeIframe = (videoId, iframe) => {
   const item = getItem(videoId);
-  if(item && item.iframes && item.iframes.has(iframe)){
+  if (item && item.iframes && item.iframes.has(iframe)) {
     item.iframes.delete(iframe);
   } else {
     console.trace("Couldn't delete iframe for videoId", videoId, item);
   }
-}
+};
 
 const addWindow = (videoId, window) => {
   const item = getItem(videoId);
-  if(item && item.windows){
+  if (item && item.windows) {
     item.windows.add(window);
   } else {
     console.trace("Couldn't add window for videoId", videoId, item);
   }
-}
+};
 
 const removeWindow = (videoId, window) => {
   const item = getItem(videoId);
-  if(item && item.windows && item.windows.has(window)){
+  if (item && item.windows && item.windows.has(window)) {
     item.windows.delete(window);
   } else {
     console.trace("Couldn't delete window for videoId", videoId, item);
   }
-}
+};
 
 const closeAllWindows = () => {
   // TODO: also close multiview window in the future
   for (let item of database.values()) {
-    if(item.windows){
+    if (item.windows) {
       for (let win of item.windows) {
         win.close();
       }
     }
   }
-}
+};
 
 const windowAlreadyOpen = (newWin) => {
   for (let item of database.values()) {
-    if(item.windows && item.windows.has(newWin)){
+    if (item.windows && item.windows.has(newWin)) {
       return true;
     }
   }
-}
+};
 
 const formatDisplayName = (displayName) => {
   return displayName && displayName !== ""
@@ -258,31 +258,20 @@ const videoOnlineHandler = (participantId) => {
     participantId
   );
   var videoId;
+  var didReuseWrapper = false;
 
-  // Check if we can reuse an empty wrapper for same username
+  // Check if we can reuse an empty wrapper for same displayName
   if (!sidebarVideoWrapper) {
-    // const emptyWrappers = displayNameToEmptyWrappers.get(displayName);
     const offlineEntries = getEntriesByName(displayName, "offline");
     if (offlineEntries.length) {
       offlineEntries.sort(sidebarVideoWrappersDomOrder);
 
       // Get first empty wrapper
-      // sidebarVideoWrapper = sortedEmptyWrappers.shift();
       const firstOfflineItem = offlineEntries.shift();
       sidebarVideoWrapper = firstOfflineItem.sidebarVideoWrapper;
       if (sidebarVideoWrapper) {
-        const oldParticipantId = firstOfflineItem.participantId;
         videoId = firstOfflineItem.videoId;
-
-        // Update all windows and iframes
-        // TODO: could be done directly through the iframe and window references stored in the database.
-        // No need to do this via bc
-        bc.postMessage({
-          participantIdReplace: {
-            oldId: oldParticipantId,
-            newId: participantId,
-          },
-        });
+        didReuseWrapper = true;
       }
     }
   }
@@ -310,7 +299,6 @@ const videoOnlineHandler = (participantId) => {
     // Init all other values for database item here
     newData.iframes = new Set();
     newData.windows = new Set();
-    // TODO: actually fill these arrays, via an API call, from inside the windows and iframes when they're opened
   }
 
   newData.videoId = videoId;
@@ -318,8 +306,19 @@ const videoOnlineHandler = (participantId) => {
 
   if (database.has(videoId)) {
     const oldData = database.get(videoId);
-    // Merge in the new data
+    // Merge in the new data.
+    // This action does not mutate but sets it to a new object...
     database.set(videoId, { ...oldData, ...newData });
+
+    // TODO: didReuseWrapper boolean may be redundant to database.has(videoId)
+    if (didReuseWrapper) {
+      // Update all windows and iframes
+      for (let win of new Set([...oldData.windows, ...oldData.iframes])) {
+        if (typeof win.participantIdReplaceHandler === "function") {
+          win.participantIdReplaceHandler(participantId);
+        }
+      }
+    }
   } else {
     database.set(videoId, newData);
   }
@@ -423,18 +422,25 @@ const setup = () => {
   };
 
   api.addEventListener("displayNameChange", (e) => {
-    // participantIdToDisplayName.set(e.id, e.displayname);
-    const item = getItemByParticipantId(e.id);
+    const displayName = e.displayname;
+    const participantId = e.id;
+    const item = getItemByParticipantId(participantId);
     if (item) {
-      item.displayName = e.displayname;
+      item.displayName = displayName;
+
+      for (let win of new Set([...item.windows, ...item.iframes])) {
+        if (typeof win.displayNameChangeHandler === "function") {
+          win.displayNameChangeHandler(displayName);
+        }
+      }
     }
-    bc.postMessage({ displayNameChange: e });
+
     // For local user
-    if (e.id === api._myUserID) {
-      myDisplayName = e.displayname;
+    if (participantId === api._myUserID) {
+      myDisplayName = displayName;
       if (
-        e.displayname !== "" &&
-        e.displayname !==
+        displayName !== "" &&
+        displayName !==
           options.interfaceConfigOverwrite.DEFAULT_REMOTE_DISPLAY_NAME
       ) {
         // This displayName is fine...
@@ -446,16 +452,18 @@ const setup = () => {
       }
     } else {
       // For remote users
-      displayNameWarning(e.id, e.displayname);
+      displayNameWarning(participantId, displayName);
     }
 
     // Always update to current state
-    const sidebarVideoWrapper = getSidebarVideoWrapperByParticipantId(e.id);
+    const sidebarVideoWrapper = getSidebarVideoWrapperByParticipantId(
+      participantId
+    );
 
     if (sidebarVideoWrapper) {
       sidebarVideoWrapper.setAttribute(
         "data-displayname",
-        formatDisplayName(e.displayname)
+        formatDisplayName(displayName)
       );
     }
   });
@@ -482,6 +490,7 @@ const setup = () => {
 
 // Expose API
 window.jitsipop = jitsipop;
+jitsipop.database = database;
 jitsipop.mainWindow = window;
 jitsipop.getFormattedDisplayName = getFormattedDisplayName;
 jitsipop.getParticipantId = getParticipantId;
