@@ -3,7 +3,7 @@ const jitsipop = {};
 const windows = [];
 
 const database = new Map([
-  /*
+  /* Data structure example
     [
       0,
       {
@@ -18,14 +18,6 @@ const database = new Map([
     ],
     */
 ]);
-
-console.log(
-  "ENTRIES",
-  database,
-  database.values(),
-  Array.from(database.values())
-);
-window.database = database;
 
 var options = {};
 var api;
@@ -43,10 +35,6 @@ const bc = new BroadcastChannel("popout_jitsi_channel");
 
 var videoIdCounter = 0;
 var myDisplayName;
-// const participantIdToSidebarVideoWrapper = new Map();
-// const displayNameToEmptyWrappers = new Map();
-// const participantIdToDisplayName = new Map();
-// const videoIdToParticipantId = new Map();
 
 const getParticipantVideo = (participantId) => {
   if (api && api._getParticipantVideo) {
@@ -60,38 +48,29 @@ const formatDisplayName = (displayName) => {
     : options.interfaceConfigOverwrite.DEFAULT_REMOTE_DISPLAY_NAME;
 };
 
-const getEntryByParticipantId = (participantId, status) => {
-  for (let entry of database.values()) {
-    // if (
-    //   (status && status === "online" && !entry.online) ||
-    //   (status === "offline" && entry.online)
-    // ) {
-    //   // Skip if not matches requested status
-    //   continue;
-    // }
-    console.log("ENTRY", entry, new Map(database));
-    if (entry.participantId === participantId) {
-      return entry;
+const getItemByParticipantId = (participantId, status) => {
+  for (let item of database.values()) {
+    if (item.participantId === participantId) {
+      return item;
     }
   }
 
   console.trace(
-    "Entry not found for participantId",
+    "Item not found for participantId",
     participantId,
     new Map(database)
   );
 };
 
 const getFormattedDisplayName = (participantId) => {
-  const entry = getEntryByParticipantId(participantId);
-  return formatDisplayName(entry ? entry.displayName : "");
+  const item = getItemByParticipantId(participantId);
+  return formatDisplayName(item ? item.displayName : "");
 };
 
 const getSidebarVideoWrapperByParticipantId = (participantId) => {
-  const entry = getEntryByParticipantId(participantId);
-  console.log("ENTRY for getSidebarVideoWrapperByParticipantId", entry);
-  if (entry && entry.sidebarVideoWrapper) {
-    return entry.sidebarVideoWrapper;
+  const item = getItemByParticipantId(participantId);
+  if (item && item.sidebarVideoWrapper) {
+    return item.sidebarVideoWrapper;
   } else {
     console.trace(
       "sidebarVideoWrapper not found for participantId",
@@ -102,21 +81,13 @@ const getSidebarVideoWrapperByParticipantId = (participantId) => {
 };
 
 const getParticipantId = (videoId) => {
-  const databaseEntry = database.get(videoId);
-  if (databaseEntry) {
-    return databaseEntry.participantId;
+  const databaseItem = database.get(videoId);
+  if (databaseItem) {
+    return databaseItem.participantId;
   } else {
-    console.trace("Entry not found for videoId", videoId, new Map(database));
+    console.trace("Item not found for videoId", videoId, new Map(database));
   }
-
-  // return videoIdToParticipantId.get(videoId);
 };
-
-// const getByValue = (map, searchValue) => {
-//   for (let [key, value] of map) {
-//     if (value === searchValue) return key;
-//   }
-// };
 
 const getVideoDocUrl = (videoId) => {
   return `about:blank#/extId=${extId}/id=${videoId}`;
@@ -200,7 +171,7 @@ const getEntriesByName = (displayName, status) => {
 
 const videoOnlineHandler = (participantId) => {
   const participant = api._participants[participantId];
-  console.log("TEST", participant);
+
   // The participant must already have left the conference...
   if (!participant) {
     return;
@@ -220,13 +191,10 @@ const videoOnlineHandler = (participantId) => {
     online: true,
   };
 
-  // TODO: don't directly call set, make a function to do it and notify via bc channel
-  // participantIdToDisplayName.set(participantId, displayName);
-
   // Search for existing wrapper which matches participantId
-  // var sidebarVideoWrapper = sidebar.querySelector(`.video-wrapper[data-participantId="${participantId}"]`);
-  // var sidebarVideoWrapper = participantIdToSidebarVideoWrapper.get(participantId);
-  var sidebarVideoWrapper = getSidebarVideoWrapperByParticipantId(participantId);
+  var sidebarVideoWrapper = getSidebarVideoWrapperByParticipantId(
+    participantId
+  );
   var videoId;
 
   // Check if we can reuse an empty wrapper for same username
@@ -234,43 +202,19 @@ const videoOnlineHandler = (participantId) => {
     // const emptyWrappers = displayNameToEmptyWrappers.get(displayName);
     const offlineEntries = getEntriesByName(displayName, "offline");
     if (offlineEntries.length) {
-      // Get emptyWrappers in DOM order
-      // const sortedEmptyWrappers = Array.from(
-      //   sidebar.querySelectorAll(".video-wrapper")
-      // ).filter((element) => {
-      //   return emptyWrappers.indexOf(element) !== -1;
-      // });
-
       offlineEntries.sort(sidebarVideoWrappersDomOrder);
 
       // Get first empty wrapper
       // sidebarVideoWrapper = sortedEmptyWrappers.shift();
-      const firstOfflineEntry = offlineEntries.shift();
-      sidebarVideoWrapper = firstOfflineEntry.sidebarVideoWrapper;
+      const firstOfflineItem = offlineEntries.shift();
+      sidebarVideoWrapper = firstOfflineItem.sidebarVideoWrapper;
       if (sidebarVideoWrapper) {
-        // Also remove from the array in our map
+        const oldParticipantId = firstOfflineItem.participantId;
+        videoId = firstOfflineItem.videoId;
 
-        // const index = emptyWrappers.indexOf(sidebarVideoWrapper);
-        // if (index !== -1) {
-        //   emptyWrappers.splice(index, 1);
-        // }
-
-        // We're reusing a wrapper with a new participantId,
-        // update the map
-
-        // const oldId = getByValue(
-        //   participantIdToSidebarVideoWrapper,
-        //   sidebarVideoWrapper
-        // );
-
-        const oldParticipantId = firstOfflineEntry.participantId;
-        videoId = firstOfflineEntry.videoId;
-
-        // videoId = getByValue(videoIdToParticipantId, oldId);
-        // videoIdToParticipantId.set(videoId, participantId);
-        // participantIdToDisplayName.delete(oldId);
-        // participantIdToSidebarVideoWrapper.delete(oldId);
         // Update all windows and iframes
+        // TODO: could be done directly through the iframe and window references stored in the database.
+        // No need to do this via bc
         bc.postMessage({
           participantIdReplace: {
             oldId: oldParticipantId,
@@ -286,7 +230,7 @@ const videoOnlineHandler = (participantId) => {
     sidebarVideoWrapper = document.createElement("div");
     sidebarVideoWrapper.classList.add("video-wrapper");
     videoId = videoIdCounter++;
-    // videoIdToParticipantId.set(videoId, participantId);
+
     sidebarVideoWrapper.addEventListener("click", () => {
       // Use the fixed videoId, so we'll always open the same window when clicking this wrapper.
       popOutVideo(videoId);
@@ -301,9 +245,10 @@ const videoOnlineHandler = (participantId) => {
     // so reload to properly inject the content script
     targetFrame.contentWindow.location.reload();
 
-    // Init all other values for database entry here
+    // Init all other values for database item here
     newData.iframes = [];
     newData.windows = [];
+    // TODO: actually fill these arrays, via an API call, from inside the windows and iframes when they're opened
   }
 
   newData.videoId = videoId;
@@ -317,8 +262,10 @@ const videoOnlineHandler = (participantId) => {
     database.set(videoId, newData);
   }
 
-  // participantIdToSidebarVideoWrapper.set(participantId, sidebarVideoWrapper);
-  sidebarVideoWrapper.setAttribute("data-displayname", formatDisplayName(displayName));
+  sidebarVideoWrapper.setAttribute(
+    "data-displayname",
+    formatDisplayName(displayName)
+  );
 };
 
 const videoOfflineHandler = (participantId) => {
@@ -326,32 +273,13 @@ const videoOfflineHandler = (participantId) => {
     return;
   }
 
-  // const sidebarVideoWrapper = participantIdToSidebarVideoWrapper.get(participantId);
-  const entry = getEntryByParticipantId(participantId);
+  const item = getItemByParticipantId(participantId);
 
-  if (!entry) {
+  if (!item) {
     return;
   }
 
-  entry.online = false;
-
-  // const sidebarVideoWrapper = entry.sidebarVideoWrapper;
-
-  // if (!sidebarVideoWrapper) {
-  //   return;
-  // }
-
-  // const targetFrame = sidebarVideoWrapper.querySelector("iframe");
-  // if (!targetFrame) {
-  //   return;
-  // }
-  // targetFrame.remove();
-  // const displayName = participantIdToDisplayName.get(participantId);
-  // if (!displayNameToEmptyWrappers.has(displayName)) {
-  //   displayNameToEmptyWrappers.set(displayName, [sidebarVideoWrapper]);
-  // } else {
-  //   displayNameToEmptyWrappers.get(displayName).push(sidebarVideoWrapper);
-  // }
+  item.online = false;
 };
 
 const setup = () => {
@@ -434,9 +362,9 @@ const setup = () => {
 
   api.addEventListener("displayNameChange", (e) => {
     // participantIdToDisplayName.set(e.id, e.displayname);
-    const entry = getEntryByParticipantId(e.id);
-    if (entry) {
-      entry.displayName = e.displayname;
+    const item = getItemByParticipantId(e.id);
+    if (item) {
+      item.displayName = e.displayname;
     }
     bc.postMessage({ displayNameChange: e });
     // For local user
@@ -461,8 +389,7 @@ const setup = () => {
 
     // Always update to current state
     const sidebarVideoWrapper = getSidebarVideoWrapperByParticipantId(e.id);
-    // const sidebarVideoWrapper = participantIdToSidebarVideoWrapper.get(e.id);
-    console.log("NAME CHANGE", sidebarVideoWrapper, new Map(database));
+
     if (sidebarVideoWrapper) {
       sidebarVideoWrapper.setAttribute(
         "data-displayname",
@@ -477,9 +404,8 @@ const setup = () => {
   });
 
   api.addEventListener("participantLeft", (e) => {
-    // Don't delete from map, only delete after we've removed the
+    // Don't delete from the database, only delete after we've removed the
     // offline participant from the sidebar and all its windows are closed
-    // participantIdToDisplayName.delete(e.id);
     videoOfflineHandler(e.id);
   });
 
