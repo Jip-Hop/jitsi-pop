@@ -4,10 +4,12 @@
 const inIframe = self !== top;
 const inPopup = window.opener !== null && window.opener !== window;
 
-window.mainWindow = inPopup
-  ? window.opener.mainWindow
-  : window.parent.mainWindow;
-const api = mainWindow.api;
+const jitsipop = window.jitsipop = inPopup
+  ? window.opener.jitsipop
+  : window.parent.jitsipop;
+
+const mainWindow = jitsipop.mainWindow;
+
 var sourceVid, targetVid, displayName, participantId, videoId, bc;
 
 const syncSource = () => {
@@ -20,7 +22,7 @@ const syncVideo = () => {
   if (inPopup && (!mainWindow || mainWindow.closed)) {
     window.close();
   }
-  const newVid = api._getParticipantVideo(participantId);
+  const newVid = jitsipop.getParticipantVideo(participantId);
   if (!newVid) {
     return;
   }
@@ -57,8 +59,8 @@ const displayNameChangeHandler = (e) => {
 };
 
 const update = () => {
-  participantId = mainWindow.getParticipantId(videoId);
-  displayName = mainWindow.getFormattedDisplayName(participantId);
+  participantId = jitsipop.getParticipantId(videoId);
+  displayName = jitsipop.getFormattedDisplayName(participantId);
   setTitle();
   syncVideo();
 };
@@ -93,8 +95,8 @@ const setup = () => {
 
   window.onunload = () => {
     // Remove this window from the array of open pop-outs in the main window
-    if (mainWindow && !mainWindow.closed && mainWindow.windows) {
-      mainWindow.windows = mainWindow.windows.filter((win) => {
+    if (mainWindow && !mainWindow.closed && jitsipop.windows) {
+      jitsipop.windows = jitsipop.windows.filter((win) => {
         return win !== window;
       });
     }
@@ -118,8 +120,8 @@ const setup = () => {
   setInterval(syncVideo, 1000);
 
   if (inPopup) {
-    if (mainWindow && !mainWindow.closed && mainWindow.windows) {
-      mainWindow.windows.push(window);
+    if (mainWindow && !mainWindow.closed && jitsipop.windows) {
+      jitsipop.windows.push(window);
     }
 
     tryRuntimeSendMessage({

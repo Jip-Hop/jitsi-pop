@@ -1,4 +1,9 @@
+// Declare jitsipop API object
+const jitsipop = {};
+const windows = [];
+
 var options = {};
+var api;
 
 const toolbarHeight = window.outerHeight - window.innerHeight;
 const popupWidth = 480;
@@ -11,8 +16,6 @@ const extId = chrome.runtime.id;
 
 const bc = new BroadcastChannel("popout_jitsi_channel");
 
-window.mainWindow = window;
-window.windows = [];
 var videoIdCounter = 0;
 var myDisplayName;
 const participantIdToSidebarVideoWrapper = new Map();
@@ -20,17 +23,23 @@ const displayNameToEmptyWrappers = new Map();
 const participantIdToDisplayName = new Map();
 const videoIdToParticipantId = new Map();
 
+const getParticipantVideo = (participantId) => {
+  if (api && api._getParticipantVideo) {
+    return api._getParticipantVideo(participantId);
+  }
+};
+
 const formatDisplayName = (displayName) => {
   return displayName && displayName !== ""
     ? displayName
     : options.interfaceConfigOverwrite.DEFAULT_REMOTE_DISPLAY_NAME;
 };
 
-window.getFormattedDisplayName = (id) => {
+const getFormattedDisplayName = (id) => {
   return formatDisplayName(participantIdToDisplayName.get(id));
 };
 
-window.getParticipantId = (videoId) => {
+const getParticipantId = (videoId) => {
   return videoIdToParticipantId.get(videoId);
 };
 
@@ -200,7 +209,7 @@ const setup = () => {
   options.parentNode = document.querySelector("#meet");
   options.roomName = urlParams.get("roomName");
 
-  window.api = new JitsiMeetExternalAPI(window.location.hostname, options);
+  api = new JitsiMeetExternalAPI(window.location.hostname, options);
 
   api.executeCommand("subject", " ");
 
@@ -329,6 +338,14 @@ const setup = () => {
     });
   };
 };
+
+// Expose API
+window.jitsipop = jitsipop;
+jitsipop.mainWindow = window;
+jitsipop.windows = windows;
+jitsipop.getFormattedDisplayName = getFormattedDisplayName;
+jitsipop.getParticipantId = getParticipantId;
+jitsipop.getParticipantVideo = getParticipantVideo;
 
 tryRuntimeSendMessage(
   {
