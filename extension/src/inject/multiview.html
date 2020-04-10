@@ -10,34 +10,22 @@
         border: 0;
       }
 
-      html {
+      html, body {
         background: black;
         width: 100vw;
         height: 100vh;
         overflow: hidden;
       }
 
-      body,
       iframe {
-        /* TODO: force hardware acceleration? */
         transition: all 0.5s ease-in-out;
-      }
-
-      body {
-        position: absolute;
-        height: var(--gridHeight);
-        width: var(--gridWidth);
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-      }
-
-      iframe {
         pointer-events: none;
         height: var(--videoHeight);
         width: var(--videoWidth);
         position: absolute;
         opacity: 0;
+        top:0;
+        left:0;
         /* transition-property: opacity; */
       }
 

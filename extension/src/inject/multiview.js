@@ -16,31 +16,32 @@ const reflow = () => {
     }
   );
 
+  const viewportWidth = getViewportWidth();
+  const viewportHeight = getViewportHeight();
   const result = fitToContainer(
     iframes.length,
-    getViewportWidth(),
-    getViewportHeight(),
+    viewportWidth,
+    viewportHeight,
     16,
     9
   );
 
-  console.log("RESULT", result);
-
   const rootStyle = document.querySelector(":root").style;
-  rootStyle.setProperty("--gridWidth", result.ncols * result.itemWidth + "px");
-  rootStyle.setProperty(
-    "--gridHeight",
-    result.nrows * result.itemHeight + "px"
-  );
   rootStyle.setProperty("--videoWidth", result.itemWidth + "px");
   rootStyle.setProperty("--videoHeight", result.itemHeight + "px");
+
+  const gridWidth = result.ncols * result.itemWidth;
+  const gridHeight = result.nrows * result.itemHeight;
+  const xCenterCompensation = (viewportWidth - gridWidth) / 2;
+  const yCenterCompensation = (viewportHeight - gridHeight) / 2;
 
   let r = 0,
     c = 0;
 
   iframes.forEach((iframe) => {
-    iframe.style.top = r * result.itemHeight + "px";
-    iframe.style.left = c * result.itemWidth + "px";
+    iframe.style.transform = `translate3d(${
+      c * result.itemWidth + xCenterCompensation
+    }px, ${r * result.itemHeight + yCenterCompensation}px, 0)`;
 
     c++;
 
@@ -122,12 +123,12 @@ const fitToContainer = (
 
 const transitionEndHandler = (e) => {
   console.log(e.propertyName, e);
-  if(e.propertyName === "opacity") {
-    if(e.target.classList.contains("remove")){
+  if (e.propertyName === "opacity") {
+    if (e.target.classList.contains("remove")) {
       e.target.remove();
     }
   }
-}
+};
 
 const update = () => {
   const newSet = jitsipop.multiviewSelection;
@@ -191,6 +192,7 @@ const setup = () => {
     jitsipop.multiviewWindow = window;
   }
 
+  // TODO: debounce resize
   window.addEventListener("resize", reflow);
 
   update();
