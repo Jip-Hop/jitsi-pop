@@ -36,7 +36,6 @@
         float: left;
         width: 100%;
         position: relative;
-        /* min-height: 90px; */
         height: 90px;
         background: black;
         cursor: pointer;
@@ -78,7 +77,8 @@
       #contextbar {
         transition: width 0.5s;
         width: 0;
-        overflow: hidden;
+        overflow-x: hidden;
+        overflow-y: auto;
         background: #283447;
       }
 
@@ -128,11 +128,12 @@
   <body>
     <div id="contextbar">
       <h4></h4>
-      <button>Pop-out</button>
+      <button id="pop-out-button">Pop-out</button>
       <button id="move-top">Move to top</button>
       <button id="move-up">Move up</button>
       <button id="move-down">Move down</button>
       <button id="move-bottom">Move to bottom</button>
+      <button id="delete-video">Delete</button>
     </div>
     <div id="sidebar"></div>
     <div id="meet"></div>

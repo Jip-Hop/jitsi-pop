@@ -78,6 +78,29 @@ const getItemByParticipantId = (participantId, status) => {
   );
 };
 
+const removeOfflineItem = (videoId) => {
+  const item = getItem(videoId);
+  if (item && !item.online) {
+    if (item.windows) {
+      for (let win of item.windows) {
+        win.close();
+      }
+    }
+
+    if (item.sidebarVideoWrapper) {
+      item.sidebarVideoWrapper.remove();
+    }
+
+    database.delete(videoId);
+
+    // TODO: select the video above the one we just removed,
+    // and keep context bar open.
+    // Or close if there are no video's left.
+    selectedVideoId = null;
+    toggleContextbar();
+  }
+};
+
 const getSidebarVideoWrapperByParticipantId = (participantId) => {
   const item = getItemByParticipantId(participantId);
   if (item && item.sidebarVideoWrapper) {
@@ -423,8 +446,8 @@ const moveSelectedWrapper = (destination) => {
 };
 
 const setupContextbar = () => {
-  const contextbar = document.querySelector("#contextbar");
-  contextbar.querySelector("button").addEventListener("click", (e) => {
+  // const contextbar = document.querySelector("#contextbar");
+  document.getElementById("pop-out-button").addEventListener("click", (e) => {
     e.preventDefault();
     popOutVideo(selectedVideoId);
   });
@@ -437,6 +460,11 @@ const setupContextbar = () => {
         moveSelectedWrapper(e.target.id);
       });
     });
+
+  document.getElementById("delete-video").addEventListener("click", (e) => {
+    e.preventDefault();
+    removeOfflineItem(selectedVideoId);
+  });
 };
 
 const setup = () => {
