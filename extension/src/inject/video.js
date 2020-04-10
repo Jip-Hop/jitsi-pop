@@ -124,7 +124,7 @@ const setup = () => {
 
     jitsipop.receiveHighRes(participantId, true);
 
-    document.documentElement.addEventListener("keyup", function (event) {
+    document.documentElement.addEventListener("keyup", (event) => {
       // Number 13 is the "Enter" key on the keyboard,
       // or "Escape" key pressed in full screen
       if (

@@ -10,12 +10,112 @@ const parentPoller = () => {
 };
 
 const reflow = () => {
-  const width = window.innerWidth / currentSelection.size;
-  const height = (width * 9) / 16;
-  document.querySelectorAll("iframe").forEach((targetFrame) => {
-    targetFrame.style.width = width;
-    targetFrame.style.height = height;
+  const iframes = Array.from(document.querySelectorAll("iframe")).sort(
+    (a, b) => {
+      return a.dataset.order - b.dataset.order;
+    }
+  );
+
+  const result = fitToContainer(
+    iframes.length,
+    getViewportWidth(),
+    getViewportHeight(),
+    16,
+    9
+  );
+
+  const rootStyle = document.querySelector(":root").style;
+  rootStyle.setProperty("--gridWidth", result.ncols * result.itemWidth + "px");
+  rootStyle.setProperty(
+    "--gridHeight",
+    result.nrows * result.itemHeight + "px"
+  );
+  rootStyle.setProperty("--videoWidth", result.itemWidth + "px");
+  rootStyle.setProperty("--videoHeight", result.itemHeight + "px");
+
+  let r = 0,
+    c = 0;
+
+  iframes.forEach((iframe) => {
+    iframe.style.top = r * result.itemHeight + "px";
+    iframe.style.left = c * result.itemWidth + "px";
+
+    c++;
+
+    if (c >= result.ncols) {
+      c = 0;
+      r++;
+    }
   });
+};
+
+const getViewportWidth = () => {
+  return Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+};
+
+const getViewportHeight = () => {
+  return Math.max(
+    document.documentElement.clientHeight,
+    window.innerHeight || 0
+  );
+};
+
+// https://math.stackexchange.com/q/466198
+// https://stackoverflow.com/q/2476327
+const fitToContainer = (
+  n,
+  containerWidth,
+  containerHeight,
+  itemWidth,
+  itemHeight
+) => {
+  // We're not necessarily dealing with squares but rectangles (itemWidth x itemHeight),
+  // temporarily compensate the containerWidth to handle as rectangles
+  containerWidth = (containerWidth * itemHeight) / itemWidth;
+  // Compute number of rows and columns, and cell size
+  var ratio = containerWidth / containerHeight;
+  var ncols_float = Math.sqrt(n * ratio);
+  var nrows_float = n / ncols_float;
+
+  // Find best option filling the whole height
+  var nrows1 = Math.ceil(nrows_float);
+  var ncols1 = Math.ceil(n / nrows1);
+  while (nrows1 * ratio < ncols1) {
+    nrows1++;
+    ncols1 = Math.ceil(n / nrows1);
+  }
+  var cell_size1 = containerHeight / nrows1;
+
+  // Find best option filling the whole width
+  var ncols2 = Math.ceil(ncols_float);
+  var nrows2 = Math.ceil(n / ncols2);
+  while (ncols2 < nrows2 * ratio) {
+    ncols2++;
+    nrows2 = Math.ceil(n / ncols2);
+  }
+  var cell_size2 = containerWidth / ncols2;
+
+  // Find the best values
+  var nrows, ncols, cell_size;
+  if (cell_size1 < cell_size2) {
+    nrows = nrows2;
+    ncols = ncols2;
+    cell_size = cell_size2;
+  } else {
+    nrows = nrows1;
+    ncols = ncols1;
+    cell_size = cell_size1;
+  }
+
+  // Undo compensation on width, to make squares into desired ratio
+  itemWidth = (cell_size * itemWidth) / itemHeight;
+  itemHeight = cell_size;
+  return {
+    nrows: nrows,
+    ncols: ncols,
+    itemWidth: itemWidth,
+    itemHeight: itemHeight,
+  };
 };
 
 const update = () => {
@@ -31,7 +131,7 @@ const update = () => {
     } else {
       targetFrame = document.getElementById("video" + videoId);
     }
-    targetFrame.style.order = jitsipop.getItemOrder(videoId);
+    targetFrame.dataset.order = jitsipop.getItemOrder(videoId);
   });
 
   currentSelection.forEach((videoId) => {
@@ -78,7 +178,7 @@ const setup = () => {
   //   type: "multiviewWinLoad",
   // });
 
-  document.documentElement.addEventListener("keyup", function (event) {
+  document.documentElement.addEventListener("keyup", (event) => {
     // Number 13 is the "Enter" key on the keyboard,
     // or "Escape" key pressed in full screen
     if (
