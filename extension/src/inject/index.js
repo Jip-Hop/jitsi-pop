@@ -20,6 +20,7 @@ const database = new Map([
 
 var options = {};
 var api;
+var selectedVideoId;
 
 const toolbarHeight = window.outerHeight - window.innerHeight;
 const popupWidth = 480;
@@ -27,7 +28,6 @@ const popupHeight = 270 + toolbarHeight;
 var xOffset = 0,
   yOffset = 0;
 
-const sidebar = document.querySelector("#sidebar");
 const extId = chrome.runtime.id;
 
 const bc = new BroadcastChannel("popout_jitsi_channel");
@@ -43,6 +43,12 @@ const receiveHighRes = (participantId, shouldReceiveHighRes) => {
   }
 };
 
+const formatDisplayName = (displayName) => {
+  return displayName && displayName !== ""
+    ? displayName
+    : options.interfaceConfigOverwrite.DEFAULT_REMOTE_DISPLAY_NAME;
+};
+
 const getParticipantVideo = (participantId) => {
   if (api && api._getParticipantVideo) {
     return api._getParticipantVideo(participantId);
@@ -53,6 +59,37 @@ const getItem = (videoId) => {
   return database.get(videoId);
 };
 
+const getFormattedDisplayName = (participantId) => {
+  const item = getItemByParticipantId(participantId);
+  return formatDisplayName(item ? item.displayName : "");
+};
+
+const getItemByParticipantId = (participantId, status) => {
+  for (let item of database.values()) {
+    if (item.participantId === participantId) {
+      return item;
+    }
+  }
+
+  console.trace(
+    "Item not found for participantId",
+    participantId,
+    new Map(database)
+  );
+};
+
+const getSidebarVideoWrapperByParticipantId = (participantId) => {
+  const item = getItemByParticipantId(participantId);
+  if (item && item.sidebarVideoWrapper) {
+    return item.sidebarVideoWrapper;
+  } else {
+    console.trace(
+      "sidebarVideoWrapper not found for participantId",
+      participantId,
+      new Map(database)
+    );
+  }
+};
 const addIframe = (videoId, iframe) => {
   const item = getItem(videoId);
   if (item && item.iframes) {
@@ -105,44 +142,6 @@ const windowAlreadyOpen = (newWin) => {
     if (item.windows && item.windows.has(newWin)) {
       return true;
     }
-  }
-};
-
-const formatDisplayName = (displayName) => {
-  return displayName && displayName !== ""
-    ? displayName
-    : options.interfaceConfigOverwrite.DEFAULT_REMOTE_DISPLAY_NAME;
-};
-
-const getItemByParticipantId = (participantId, status) => {
-  for (let item of database.values()) {
-    if (item.participantId === participantId) {
-      return item;
-    }
-  }
-
-  console.trace(
-    "Item not found for participantId",
-    participantId,
-    new Map(database)
-  );
-};
-
-const getFormattedDisplayName = (participantId) => {
-  const item = getItemByParticipantId(participantId);
-  return formatDisplayName(item ? item.displayName : "");
-};
-
-const getSidebarVideoWrapperByParticipantId = (participantId) => {
-  const item = getItemByParticipantId(participantId);
-  if (item && item.sidebarVideoWrapper) {
-    return item.sidebarVideoWrapper;
-  } else {
-    console.trace(
-      "sidebarVideoWrapper not found for participantId",
-      participantId,
-      new Map(database)
-    );
   }
 };
 
@@ -231,6 +230,40 @@ const getEntriesByName = (displayName, status) => {
   }, []);
 };
 
+const updateContextbar = () => {
+  const item = getItem(selectedVideoId);
+  console.log("updateContextbar", item);
+  const contextbar = document.querySelector("#contextbar");
+  contextbar.querySelector("h4").innerText = formatDisplayName(
+    item.displayName
+  );
+};
+
+const toggleContextbar = () => {
+  document.documentElement.classList.toggle("show-context");
+};
+
+const selectVideoInSidebar = (videoId, sidebarVideoWrapper) => {
+  if (selectedVideoId === videoId) {
+    // Deselect and close context bar
+    sidebarVideoWrapper.classList.remove("selected");
+    toggleContextbar();
+    selectedVideoId = null;
+  } else {
+    selectedVideoId = videoId;
+    updateContextbar();
+    const sidebar = document.querySelector("#sidebar");
+    const previousSelected = sidebar.querySelector(".selected");
+    if (previousSelected) {
+      previousSelected.classList.remove("selected");
+    } else {
+      // Open context bar
+      toggleContextbar();
+    }
+    sidebarVideoWrapper.classList.add("selected");
+  }
+};
+
 const videoOnlineHandler = (participantId) => {
   const participant = api._participants[participantId];
 
@@ -284,13 +317,14 @@ const videoOnlineHandler = (participantId) => {
 
     sidebarVideoWrapper.addEventListener("click", () => {
       // Use the fixed videoId, so we'll always open the same window when clicking this wrapper.
-      popOutVideo(videoId);
+      selectVideoInSidebar(videoId, sidebarVideoWrapper);
     });
 
     const targetFrame = document.createElement("iframe");
     targetFrame.src = getVideoDocUrl(videoId);
     sidebarVideoWrapper.appendChild(targetFrame);
 
+    const sidebar = document.querySelector("#sidebar");
     sidebar.appendChild(sidebarVideoWrapper);
     // Setting the src to a url with about:blank + hash doesn't trigger a load,
     // so reload to properly inject the content script
@@ -327,6 +361,7 @@ const videoOnlineHandler = (participantId) => {
     "data-displayname",
     formatDisplayName(displayName)
   );
+  sidebarVideoWrapper.classList.remove("offline");
 };
 
 const videoOfflineHandler = (participantId) => {
@@ -340,10 +375,23 @@ const videoOfflineHandler = (participantId) => {
     return;
   }
 
+  if (item.sidebarVideoWrapper) {
+    item.sidebarVideoWrapper.classList.add("offline");
+  }
   item.online = false;
 };
 
+const setupContextbar = () => {
+  const contextbar = document.querySelector("#contextbar");
+  contextbar.querySelector("button").addEventListener("click", (e) => {
+    e.preventDefault();
+    popOutVideo(selectedVideoId);
+  });
+};
+
 const setup = () => {
+  setupContextbar();
+
   const urlParams = new URLSearchParams(
     "?" + location.hash.substring(2).replace(/\//g, "&")
   );
@@ -465,6 +513,10 @@ const setup = () => {
         "data-displayname",
         formatDisplayName(displayName)
       );
+    }
+
+    if (item.videoId === selectedVideoId) {
+      updateContextbar();
     }
   });
 

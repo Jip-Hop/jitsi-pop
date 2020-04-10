@@ -8,6 +8,7 @@
         margin: 0;
         padding: 0;
         border: 0;
+        outline: 0;
       }
 
       html,
@@ -15,8 +16,8 @@
         width: 100vw;
         height: 100vh;
         overflow: hidden;
-        font-family: sans-serif;
-        background: #0E1624;
+        font-family: -apple-system,BlinkMacSystemFont,open_sanslight,"Helvetica Neue",Helvetica,Arial,sans-serif;
+        background: #0e1624;
       }
 
       body {
@@ -27,7 +28,7 @@
         width: 160px;
         height: 100vh;
         overflow-y: auto;
-        background: rgba(0,0,0,0.5);
+        background: rgba(0, 0, 0, 0.5);
       }
 
       #sidebar > .video-wrapper {
@@ -40,33 +41,76 @@
         cursor: pointer;
       }
 
-      #sidebar > .video-wrapper:hover:after,
-      #sidebar > .video-wrapper:empty:after {
+      #sidebar > .video-wrapper:after {
+        content: "";
         display: flex;
         align-items: center;
         justify-content: center;
         position: absolute;
-        content: attr(data-displayname);
         left: 0;
         top: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
         color: white;
+        box-sizing: border-box;
       }
 
-      #sidebar > .video-wrapper:empty:after {
+      #sidebar > .video-wrapper:hover:after,
+      #sidebar > .video-wrapper.offline:after {
+        content: attr(data-displayname);
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+
+      html.show-context > body > #sidebar > .video-wrapper.selected:after {
+        border: 1px solid #ff991f;
+      }
+
+      #sidebar > .video-wrapper.offline:after {
         color: #4e4e4e;
-        /* cursor: default; */
       }
-
-      /* #sidebar > .video-wrapper > video {
-        width: 100%;
-      } */
 
       #sidebar > .video-wrapper > iframe {
         width: 100%;
         height: 100%;
+      }
+
+      #contextbar {
+        transition: width 0.5s;
+        width: 0;
+        overflow: hidden;
+        background: #283447;
+      }
+
+      html.show-context #contextbar {
+        width: 160px;
+      }
+
+      #contextbar > h4 {
+        margin: 20px;
+        color: #b8c7e0;
+      }
+      
+      #contextbar > button {
+        background: #4c9aff;
+        cursor: pointer;
+        color: #1b2638;
+        border-radius: 3px;
+        width: 140px;
+        padding: 10px;
+        margin: 10px;
+        box-sizing: border-box;
+      }
+
+      #contextbar > button:first-of-type {
+        margin-top: 0;
+      }
+
+      #contextbar > button:first-of-type {
+        margin-top: 0;
+      }
+
+      #contextbar > button:hover {
+        background: #b3d4ff;
       }
 
       #meet {
@@ -76,6 +120,10 @@
     </style>
   </head>
   <body>
+    <div id="contextbar">
+      <h4></h4>
+      <button>Pop-out</button>
+    </div>
     <div id="sidebar"></div>
     <div id="meet"></div>
   </body>
