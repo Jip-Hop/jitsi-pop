@@ -103,7 +103,6 @@
 
       #contextbar > button {
         background: #4c9aff;
-        cursor: pointer;
         color: #1b2638;
         border-radius: 3px;
         padding: 10px;
@@ -119,8 +118,13 @@
         margin-top: 0;
       }
 
-      #contextbar > button:hover {
+      #contextbar > button:not(:disabled):hover {
         background: #b3d4ff;
+        cursor: pointer;
+      }
+
+      #contextbar > button:disabled {
+        background: gray;
       }
 
       #meet {
@@ -132,12 +136,12 @@
   <body>
     <div id="contextbar">
       <h4></h4>
-      <button id="pop-out-button">Pop-out</button>
-      <button id="move-top">Move to top</button>
-      <button id="move-up">Move up</button>
-      <button id="move-down">Move down</button>
-      <button id="move-bottom">Move to bottom</button>
-      <button id="delete-video">Delete</button>
+      <button class="pop-out-button">Pop-out</button>
+      <button class="move-button" data-destination="move-top">Move to top</button>
+      <button class="move-button" data-destination="move-up">Move up</button>
+      <button class="move-button" data-destination="move-down">Move down</button>
+      <button class="move-button" data-destination="move-bottom">Move to bottom</button>
+      <button class="delete-video">Delete</button>
     </div>
     <div id="sidebar"></div>
     <div id="meet"></div>

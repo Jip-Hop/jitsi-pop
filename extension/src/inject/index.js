@@ -20,7 +20,7 @@ const database = new Map([
 
 var options = {};
 var api;
-var selectedVideoId;
+var selectedVideoId = null;
 
 const toolbarHeight = window.outerHeight - window.innerHeight;
 const popupWidth = 480;
@@ -96,8 +96,12 @@ const removeOfflineItem = (videoId) => {
     // TODO: select the video above the one we just removed,
     // and keep context bar open.
     // Or close if there are no video's left.
-    selectedVideoId = null;
-    toggleContextbar();
+
+    if (videoId === selectedVideoId) {
+      selectedVideoId = null;
+    }
+
+    closeContextbar();
   }
 };
 
@@ -255,22 +259,61 @@ const getEntriesByName = (displayName, status) => {
 
 const updateContextbar = () => {
   const item = getItem(selectedVideoId);
-  console.log("updateContextbar", item);
+
   const contextbar = document.querySelector("#contextbar");
   contextbar.querySelector("h4").innerText = formatDisplayName(
     item.displayName
   );
+
+  if (database.size > 1) {
+    if (item.sidebarVideoWrapper) {
+      contextbar
+        .querySelectorAll(
+          "[data-destination='move-top'], [data-destination='move-up']"
+        )
+        .forEach((button) => {
+          if (item.sidebarVideoWrapper.previousElementSibling) {
+            button.disabled = false;
+          } else {
+            button.disabled = true;
+          }
+        });
+
+      contextbar
+        .querySelectorAll(
+          "[data-destination='move-bottom'], [data-destination='move-down']"
+        )
+        .forEach((button) => {
+          if (item.sidebarVideoWrapper.nextElementSibling) {
+            button.disabled = false;
+          } else {
+            button.disabled = true;
+          }
+        });
+    }
+  } else {
+    contextbar.querySelectorAll(".move-button").forEach((button) => {
+      button.disabled = true;
+    });
+  }
+
+  const deleteButton = contextbar.querySelector(".delete-video");
+  deleteButton.disabled = item.online;
 };
 
-const toggleContextbar = () => {
-  document.documentElement.classList.toggle("show-context");
+const openContextbar = () => {
+  document.documentElement.classList.add("show-context");
+};
+
+const closeContextbar = () => {
+  document.documentElement.classList.remove("show-context");
 };
 
 const selectVideoInSidebar = (videoId, sidebarVideoWrapper) => {
   if (selectedVideoId === videoId) {
     // Deselect and close context bar
     sidebarVideoWrapper.classList.remove("selected");
-    toggleContextbar();
+    closeContextbar();
     selectedVideoId = null;
   } else {
     selectedVideoId = videoId;
@@ -280,8 +323,7 @@ const selectVideoInSidebar = (videoId, sidebarVideoWrapper) => {
     if (previousSelected) {
       previousSelected.classList.remove("selected");
     } else {
-      // Open context bar
-      toggleContextbar();
+      openContextbar();
     }
     sidebarVideoWrapper.classList.add("selected");
   }
@@ -392,6 +434,10 @@ const videoOnlineHandler = (participantId) => {
     formatDisplayName(displayName)
   );
   sidebarVideoWrapper.classList.remove("offline");
+
+  if (selectedVideoId !== null) {
+    updateContextbar();
+  }
 };
 
 const videoOfflineHandler = (participantId) => {
@@ -436,25 +482,25 @@ const moveSelectedWrapper = (destination) => {
   } else if (destination === "move-bottom") {
     parentNode.appendChild(element);
   }
+
+  updateContextbar();
 };
 
 const setupContextbar = () => {
-  // const contextbar = document.querySelector("#contextbar");
-  document.getElementById("pop-out-button").addEventListener("click", (e) => {
+  const contextbar = document.querySelector("#contextbar");
+  contextbar.querySelector(".pop-out-button").addEventListener("click", (e) => {
     e.preventDefault();
     popOutVideo(selectedVideoId);
   });
 
-  document
-    .querySelectorAll("#move-top, #move-up, #move-down, #move-bottom")
-    .forEach((element) => {
-      element.addEventListener("click", (e) => {
-        e.preventDefault();
-        moveSelectedWrapper(e.target.id);
-      });
+  contextbar.querySelectorAll(".move-button").forEach((element) => {
+    element.addEventListener("click", (e) => {
+      e.preventDefault();
+      moveSelectedWrapper(e.target.dataset.destination);
     });
+  });
 
-  document.getElementById("delete-video").addEventListener("click", (e) => {
+  contextbar.querySelector(".delete-video").addEventListener("click", (e) => {
     e.preventDefault();
     removeOfflineItem(selectedVideoId);
   });
@@ -600,6 +646,10 @@ const setup = () => {
     // Don't delete from the database, only delete after we've removed the
     // offline participant from the sidebar and all its windows are closed
     videoOfflineHandler(e.id);
+
+    if (selectedVideoId !== null) {
+      updateContextbar();
+    }
   });
 
   window.onbeforeunload = (e) => {
