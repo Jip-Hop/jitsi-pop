@@ -348,14 +348,17 @@ const videoOnlineHandler = (participantId) => {
     });
 
     const targetFrame = document.createElement("iframe");
-    targetFrame.src = getVideoDocUrl(videoId);
+    // Setting the src to a url with about:blank + hash doesn't trigger a load
+    // when the iframe is (re)attached to the DOM,
+    // but this javascript does evaluate each time and sets proper href,
+    // so the inject.js content script will run.
+    targetFrame.src = `javascript:this.location.href="${getVideoDocUrl(
+      videoId
+    )})";`;
     sidebarVideoWrapper.appendChild(targetFrame);
 
     const sidebar = document.querySelector("#sidebar");
     sidebar.appendChild(sidebarVideoWrapper);
-    // Setting the src to a url with about:blank + hash doesn't trigger a load,
-    // so reload to properly inject the content script
-    targetFrame.contentWindow.location.reload();
 
     // Init all other values for database item here
     newData.iframes = new Set();
@@ -433,16 +436,6 @@ const moveSelectedWrapper = (destination) => {
   } else if (destination === "move-bottom") {
     parentNode.appendChild(element);
   }
-
-  const iframes = parentNode.querySelectorAll("iframe");
-  iframes.forEach((iframe) => {
-    // TODO: The iframes will reload when moving around in the DOM,
-    // but in our case the video.js won't properly inject without calling reload().
-    // There's a css only solution to reordering: https://stackoverflow.com/a/39997814.
-    // But I'm using DOM order also in sidebarVideoWrappersDomOrder(), so need to change
-    // that logic too.
-    iframe.contentWindow.location.reload();
-  });
 };
 
 const setupContextbar = () => {
@@ -615,7 +608,12 @@ const setup = () => {
     e.returnValue = "";
   };
 
-  window.onunload = () => closeAllWindows;
+  // TODO: maybe nice to keep the pop-out windows open on reload,
+  // but then the database and other state in here is reset...
+  // So would have to somehow have the pop-out reconnect.
+  // But we don't want the pop-outs to stay open when this window
+  // actually closes.
+  window.addEventListener("unload", closeAllWindows);
 };
 
 // Expose API
