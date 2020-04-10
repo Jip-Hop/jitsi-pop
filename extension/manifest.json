@@ -21,6 +21,8 @@
     "src/inject/index.js",
     "src/inject/video.html",
     "src/inject/video.js",
+    "src/inject/multiview.html",
+    "src/inject/multiview.js",
     "src/inject/jitsiFrame.js",
     "src/inject/jitsiConfig.js"
   ],

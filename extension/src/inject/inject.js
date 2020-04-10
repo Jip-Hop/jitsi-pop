@@ -56,6 +56,15 @@ const loadVideo = async () => {
   import(chrome.runtime.getURL("src/inject/video.js"));
 };
 
+const loadMultiview = async () => {
+  const html = await fetch(
+    chrome.runtime.getURL("src/inject/multiview.html")
+  ).then((response) => response.text());
+  document.documentElement.innerHTML = html;
+
+  import(chrome.runtime.getURL("src/inject/multiview.js"));
+};
+
 const loadJitsiFrame = () => {
   const inject = () => {
     var s = document.createElement("script");
@@ -84,6 +93,10 @@ const hasExtHash = (win) => {
 
 const isAboutBlank = (win) => {
   return win.location.href.startsWith("about:blank");
+};
+
+const isMultiview = (win) => {
+  return win.location.hash.startsWith(`#/extId=${extId}/multiview=1`);
 };
 
 const isCrossDomain = () => {
@@ -157,8 +170,13 @@ if (hasExtHash(window)) {
 
   // Current page is to be processed by this extension
   if (isAboutBlank(window)) {
-    // Make current page a video window
-    makeBlack(loadVideo);
+    if (isMultiview(window)) {
+      // Make current page a multiview window
+      makeBlack(loadMultiview);
+    } else {
+      // Make current page a video window
+      makeBlack(loadVideo);
+    }
   } else {
     // Make current page our main window
     makeBlack(() => {

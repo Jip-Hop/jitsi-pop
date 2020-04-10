@@ -21,6 +21,7 @@ const database = new Map([
 var options = {};
 var api;
 var selectedVideoId = null;
+const multiviewSelection = new Set();
 
 const toolbarHeight = window.outerHeight - window.innerHeight;
 const popupWidth = 480;
@@ -185,6 +186,26 @@ const getVideoDocUrl = (videoId) => {
   return `about:blank#/extId=${extId}/id=${videoId}`;
 };
 
+const getVideoDocUrlForIframe = (videoId) => {
+  return `javascript:this.location.href="${getVideoDocUrl(videoId)})";`;
+};
+
+const getMultiviewDocUrl = () => {
+  return `about:blank#/extId=${extId}/multiview=1/`;
+};
+
+const changeWindowOffset = () => {
+  xOffset += popupWidth;
+  if (xOffset + popupWidth > screen.width) {
+    xOffset = 0;
+    yOffset += popupHeight;
+  }
+  if (yOffset + popupHeight > screen.height) {
+    xOffset = 0;
+    yOffset = 0;
+  }
+};
+
 const popOutVideo = (videoId) => {
   const win = window.open(
     getVideoDocUrl(videoId),
@@ -196,15 +217,31 @@ const popOutVideo = (videoId) => {
 
   // We made a new window
   if (!windowAlreadyOpen(win)) {
-    xOffset += popupWidth;
-    if (xOffset + popupWidth > screen.width) {
-      xOffset = 0;
-      yOffset += popupHeight;
-    }
-    if (yOffset + popupHeight > screen.height) {
-      xOffset = 0;
-      yOffset = 0;
-    }
+    changeWindowOffset();
+  }
+};
+
+const makeMultiviewWindow = (videoId) => {
+  // Don't focus on the multiviewWindow if already open
+  if (!jitsipop.multiviewWindow || jitsipop.multiviewWindow.closed) {
+    jitsipop.multiviewWindow = window.open(
+      getMultiviewDocUrl(),
+      "multiview",
+      `status=no,menubar=no,width=${popupWidth},height=${popupHeight},left=${
+        screen.left + xOffset
+      },top=${screen.top + yOffset}`
+    );
+    changeWindowOffset();
+  }
+
+  if (multiviewSelection.has(videoId)) {
+    multiviewSelection.delete(videoId);
+  } else {
+    multiviewSelection.add(videoId);
+  }
+
+  if (jitsipop.multiviewWindow.update) {
+    jitsipop.multiviewWindow.update();
   }
 };
 
@@ -394,9 +431,7 @@ const videoOnlineHandler = (participantId) => {
     // when the iframe is (re)attached to the DOM,
     // but this javascript does evaluate each time and sets proper href,
     // so the inject.js content script will run.
-    targetFrame.src = `javascript:this.location.href="${getVideoDocUrl(
-      videoId
-    )})";`;
+    targetFrame.src = getVideoDocUrlForIframe(videoId);
     sidebarVideoWrapper.appendChild(targetFrame);
 
     const sidebar = document.querySelector("#sidebar");
@@ -488,10 +523,18 @@ const moveSelectedWrapper = (destination) => {
 
 const setupContextbar = () => {
   const contextbar = document.querySelector("#contextbar");
+
   contextbar.querySelector(".pop-out-button").addEventListener("click", (e) => {
     e.preventDefault();
     popOutVideo(selectedVideoId);
   });
+
+  contextbar
+    .querySelector(".multiview-button")
+    .addEventListener("click", (e) => {
+      e.preventDefault();
+      makeMultiviewWindow(selectedVideoId);
+    });
 
   contextbar.querySelectorAll(".move-button").forEach((element) => {
     element.addEventListener("click", (e) => {
@@ -670,6 +713,7 @@ const setup = () => {
 window.jitsipop = jitsipop;
 jitsipop.database = database;
 jitsipop.mainWindow = window;
+jitsipop.multiviewSelection = multiviewSelection;
 jitsipop.getFormattedDisplayName = getFormattedDisplayName;
 jitsipop.getParticipantId = getParticipantId;
 jitsipop.getParticipantVideo = getParticipantVideo;
@@ -678,6 +722,7 @@ jitsipop.addIframe = addIframe;
 jitsipop.removeIframe = removeIframe;
 jitsipop.addWindow = addWindow;
 jitsipop.removeWindow = removeWindow;
+jitsipop.getVideoDocUrlForIframe = getVideoDocUrlForIframe;
 
 tryRuntimeSendMessage(
   {
