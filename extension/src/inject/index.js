@@ -528,28 +528,13 @@ const moveSelectedWrapper = (destination) => {
     return;
   }
 
-  // const element = item.sidebarVideoWrapper;
-  // if (!element) {
-  //   return;
-  // }
-
-  // const parentNode = element.parentNode;
-
   if (destination === "move-top") {
-    // parentNode.prepend(element);
     applyNewOrder(selectedVideoId, 1);
   } else if (destination === "move-up") {
-    // if (element.previousElementSibling) {
-    //   parentNode.insertBefore(element, element.previousElementSibling);
-    // }
     applyNewOrder(selectedVideoId, item.order - 1);
   } else if (destination === "move-down") {
-    // if (element.nextElementSibling) {
-    //   parentNode.insertBefore(element.nextElementSibling, element);
-    // }
     applyNewOrder(selectedVideoId, item.order + 1);
   } else if (destination === "move-bottom") {
-    // parentNode.appendChild(element);
     applyNewOrder(selectedVideoId, database.size);
   }
 
