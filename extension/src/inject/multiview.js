@@ -10,7 +10,7 @@ const parentPoller = () => {
 };
 
 const reflow = () => {
-  const iframes = Array.from(document.querySelectorAll("iframe")).sort(
+  const iframes = Array.from(document.querySelectorAll("iframe.show")).sort(
     (a, b) => {
       return a.dataset.order - b.dataset.order;
     }
@@ -23,6 +23,8 @@ const reflow = () => {
     16,
     9
   );
+
+  console.log("RESULT", result);
 
   const rootStyle = document.querySelector(":root").style;
   rootStyle.setProperty("--gridWidth", result.ncols * result.itemWidth + "px");
@@ -111,12 +113,21 @@ const fitToContainer = (
   itemWidth = (cell_size * itemWidth) / itemHeight;
   itemHeight = cell_size;
   return {
-    nrows: nrows,
-    ncols: ncols,
-    itemWidth: itemWidth,
-    itemHeight: itemHeight,
+    nrows: nrows || 1,
+    ncols: ncols || 1,
+    itemWidth: itemWidth || containerWidth,
+    itemHeight: itemHeight || containerHeight,
   };
 };
+
+const transitionEndHandler = (e) => {
+  console.log(e.propertyName, e);
+  if(e.propertyName === "opacity") {
+    if(e.target.classList.contains("remove")){
+      e.target.remove();
+    }
+  }
+}
 
 const update = () => {
   const newSet = jitsipop.multiviewSelection;
@@ -127,10 +138,17 @@ const update = () => {
       targetFrame = document.createElement("iframe");
       targetFrame.id = "video" + videoId;
       targetFrame.src = jitsipop.getVideoDocUrlForIframe(videoId);
+      // TODO: fade in video, and don't transition position when adding the first time,
+      // make it only fade and appear already in target position.
+
+      targetFrame.addEventListener("transitionend", transitionEndHandler);
+
       document.body.appendChild(targetFrame);
     } else {
       targetFrame = document.getElementById("video" + videoId);
     }
+    targetFrame.classList.add("show");
+    targetFrame.classList.remove("remove");
     targetFrame.dataset.order = jitsipop.getItemOrder(videoId);
   });
 
@@ -138,7 +156,10 @@ const update = () => {
     if (!newSet.has(videoId)) {
       const targetFrame = document.getElementById("video" + videoId);
       if (targetFrame) {
-        targetFrame.remove();
+        // TODO: fade out first, then remove
+        targetFrame.classList.remove("show");
+        targetFrame.classList.add("remove");
+        // targetFrame.remove();
       }
     }
   });
