@@ -16,7 +16,8 @@
         width: 100vw;
         height: 100vh;
         overflow: hidden;
-        font-family: -apple-system,BlinkMacSystemFont,open_sanslight,"Helvetica Neue",Helvetica,Arial,sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, open_sanslight,
+          "Helvetica Neue", Helvetica, Arial, sans-serif;
         background: #0e1624;
       }
 
@@ -85,19 +86,24 @@
         width: 160px;
       }
 
-      #contextbar > h4 {
-        margin: 20px;
-        color: #b8c7e0;
+      #contextbar > * {
+        width: 140px;
+        margin: 10px;
       }
-      
+
+      #contextbar > h4 {
+        margin: 20px 10px;
+        color: #b8c7e0;
+        text-align: center;
+      }
+
       #contextbar > button {
         background: #4c9aff;
         cursor: pointer;
         color: #1b2638;
         border-radius: 3px;
-        width: 140px;
         padding: 10px;
-        margin: 10px;
+        margin: 5px 10px;
         box-sizing: border-box;
       }
 
@@ -123,6 +129,10 @@
     <div id="contextbar">
       <h4></h4>
       <button>Pop-out</button>
+      <button id="move-top">Move to top</button>
+      <button id="move-up">Move up</button>
+      <button id="move-down">Move down</button>
+      <button id="move-bottom">Move to bottom</button>
     </div>
     <div id="sidebar"></div>
     <div id="meet"></div>

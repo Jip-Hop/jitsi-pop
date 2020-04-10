@@ -293,6 +293,10 @@ const videoOnlineHandler = (participantId) => {
   var videoId;
   var didReuseWrapper = false;
 
+  // TODO: there may be a bug after conference re-join (e.g. connection lost)
+  // when reusing wrappers if the local participant has the same displayName
+  // as some of the other participants... It will occupy more than 1 wrapper.
+
   // Check if we can reuse an empty wrapper for same displayName
   if (!sidebarVideoWrapper) {
     const offlineEntries = getEntriesByName(displayName, "offline");
@@ -381,12 +385,58 @@ const videoOfflineHandler = (participantId) => {
   item.online = false;
 };
 
+const moveSelectedWrapper = (destination) => {
+  const item = getItem(selectedVideoId);
+  if (!item) {
+    return;
+  }
+  const element = item.sidebarVideoWrapper;
+  if (!element) {
+    return;
+  }
+
+  const parentNode = element.parentNode;
+
+  if (destination === "move-top") {
+    parentNode.prepend(element);
+  } else if (destination === "move-up") {
+    if (element.previousElementSibling) {
+      parentNode.insertBefore(element, element.previousElementSibling);
+    }
+  } else if (destination === "move-down") {
+    if (element.nextElementSibling) {
+      parentNode.insertBefore(element.nextElementSibling, element);
+    }
+  } else if (destination === "move-bottom") {
+    parentNode.appendChild(element);
+  }
+
+  const iframes = parentNode.querySelectorAll("iframe");
+  iframes.forEach((iframe) => {
+    // TODO: The iframes will reload when moving around in the DOM,
+    // but in our case the video.js won't properly inject without calling reload().
+    // There's a css only solution to reordering: https://stackoverflow.com/a/39997814.
+    // But I'm using DOM order also in sidebarVideoWrappersDomOrder(), so need to change
+    // that logic too.
+    iframe.contentWindow.location.reload();
+  });
+};
+
 const setupContextbar = () => {
   const contextbar = document.querySelector("#contextbar");
   contextbar.querySelector("button").addEventListener("click", (e) => {
     e.preventDefault();
     popOutVideo(selectedVideoId);
   });
+
+  document
+    .querySelectorAll("#move-top, #move-up, #move-down, #move-bottom")
+    .forEach((element) => {
+      element.addEventListener("click", (e) => {
+        e.preventDefault();
+        moveSelectedWrapper(e.target.id);
+      });
+    });
 };
 
 const setup = () => {
