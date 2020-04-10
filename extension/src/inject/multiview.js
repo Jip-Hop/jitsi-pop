@@ -22,12 +22,16 @@ const update = () => {
   const newSet = jitsipop.multiviewSelection;
 
   newSet.forEach((videoId) => {
+    var targetFrame;
     if (!currentSelection.has(videoId)) {
-      const targetFrame = document.createElement("iframe");
+      targetFrame = document.createElement("iframe");
       targetFrame.id = "video" + videoId;
       targetFrame.src = jitsipop.getVideoDocUrlForIframe(videoId);
       document.body.appendChild(targetFrame);
+    } else {
+      targetFrame = document.getElementById("video" + videoId);
     }
+    targetFrame.style.order = jitsipop.getItemOrder(videoId);
   });
 
   currentSelection.forEach((videoId) => {

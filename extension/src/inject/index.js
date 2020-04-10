@@ -174,6 +174,13 @@ const windowAlreadyOpen = (newWin) => {
   }
 };
 
+const getItemOrder = (videoId) => {
+  const item = getItem(videoId);
+  if (item) {
+    return item.order;
+  }
+};
+
 const getParticipantId = (videoId) => {
   const databaseItem = database.get(videoId);
   if (databaseItem) {
@@ -744,6 +751,7 @@ jitsipop.removeIframe = removeIframe;
 jitsipop.addWindow = addWindow;
 jitsipop.removeWindow = removeWindow;
 jitsipop.getVideoDocUrlForIframe = getVideoDocUrlForIframe;
+jitsipop.getItemOrder = getItemOrder;
 
 tryRuntimeSendMessage(
   {
