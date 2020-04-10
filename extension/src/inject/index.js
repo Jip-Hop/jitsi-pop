@@ -13,6 +13,7 @@ const database = new Map([
         online: true,
         iframes: Set ["iframe window object"], // each iframe window object in the Set is unique
         windows: Set ["pop-out window object"], // each pop-out window object in the Set is unique
+        order, // unique, used for sorting, starts at 1
       },
     ],
     */
@@ -240,35 +241,11 @@ const makeMultiviewWindow = (videoId) => {
     multiviewSelection.add(videoId);
   }
 
-  if (jitsipop.multiviewWindow.update) {
-    jitsipop.multiviewWindow.update();
-  }
+  updateMultiviewWindow();
 };
 
-const domPositionComparator = (a, b) => {
-  if (a === b) {
-    return 0;
-  }
-
-  var position = a.compareDocumentPosition(b);
-
-  if (
-    position & Node.DOCUMENT_POSITION_FOLLOWING ||
-    position & Node.DOCUMENT_POSITION_CONTAINED_BY
-  ) {
-    return -1;
-  } else if (
-    position & Node.DOCUMENT_POSITION_PRECEDING ||
-    position & Node.DOCUMENT_POSITION_CONTAINS
-  ) {
-    return 1;
-  } else {
-    return 0;
-  }
-};
-
-const sidebarVideoWrappersDomOrder = (a, b) => {
-  return domPositionComparator(a.sidebarVideoWrapper, b.sidebarVideoWrapper);
+const sidebarVideoWrappersOrder = (a, b) => {
+  return a.order - b.order;
 };
 
 const getEntriesByName = (displayName, status) => {
@@ -294,6 +271,16 @@ const getEntriesByName = (displayName, status) => {
   }, []);
 };
 
+const updateMultiviewWindow = () => {
+  if (
+    jitsipop.multiviewWindow &&
+    jitsipop.multiviewWindow.update &&
+    !jitsipop.multiviewWindow.closed
+  ) {
+    jitsipop.multiviewWindow.update();
+  }
+};
+
 const updateContextbar = () => {
   const item = getItem(selectedVideoId);
 
@@ -309,7 +296,7 @@ const updateContextbar = () => {
           "[data-destination='move-top'], [data-destination='move-up']"
         )
         .forEach((button) => {
-          if (item.sidebarVideoWrapper.previousElementSibling) {
+          if (item.order > 1) {
             button.disabled = false;
           } else {
             button.disabled = true;
@@ -321,7 +308,7 @@ const updateContextbar = () => {
           "[data-destination='move-bottom'], [data-destination='move-down']"
         )
         .forEach((button) => {
-          if (item.sidebarVideoWrapper.nextElementSibling) {
+          if (item.order < database.size) {
             button.disabled = false;
           } else {
             button.disabled = true;
@@ -366,6 +353,47 @@ const selectVideoInSidebar = (videoId, sidebarVideoWrapper) => {
   }
 };
 
+const applyNewOrder = (videoId, newOrder) => {
+  const item = getItem(videoId);
+  if (!item) {
+    return;
+  }
+
+  if (newOrder < 1 || newOrder > database.size) {
+    return;
+  }
+
+  const currentOrder = item.order;
+  if (currentOrder === newOrder) {
+    return;
+  }
+
+  if (newOrder > currentOrder) {
+    for (let item of database.values()) {
+      if (item.order > currentOrder && item.order <= newOrder) {
+        item.order--;
+        if (item.sidebarVideoWrapper) {
+          item.sidebarVideoWrapper.style.order = item.order;
+        }
+      }
+    }
+  } else {
+    for (let item of database.values()) {
+      if (item.order >= newOrder && item.order < currentOrder) {
+        item.order++;
+        if (item.sidebarVideoWrapper) {
+          item.sidebarVideoWrapper.style.order = item.order;
+        }
+      }
+    }
+  }
+
+  item.order = newOrder;
+  if (item.sidebarVideoWrapper) {
+    item.sidebarVideoWrapper.style.order = item.order;
+  }
+};
+
 const videoOnlineHandler = (participantId) => {
   const participant = api._participants[participantId];
 
@@ -403,7 +431,7 @@ const videoOnlineHandler = (participantId) => {
   if (!sidebarVideoWrapper) {
     const offlineEntries = getEntriesByName(displayName, "offline");
     if (offlineEntries.length) {
-      offlineEntries.sort(sidebarVideoWrappersDomOrder);
+      offlineEntries.sort(sidebarVideoWrappersOrder);
 
       // Get first empty wrapper
       const firstOfflineItem = offlineEntries.shift();
@@ -440,6 +468,8 @@ const videoOnlineHandler = (participantId) => {
     // Init all other values for database item here
     newData.iframes = new Set();
     newData.windows = new Set();
+    newData.order = database.size + 1;
+    sidebarVideoWrapper.style.order = newData.order;
   }
 
   newData.videoId = videoId;
@@ -497,28 +527,34 @@ const moveSelectedWrapper = (destination) => {
   if (!item) {
     return;
   }
-  const element = item.sidebarVideoWrapper;
-  if (!element) {
-    return;
-  }
 
-  const parentNode = element.parentNode;
+  // const element = item.sidebarVideoWrapper;
+  // if (!element) {
+  //   return;
+  // }
+
+  // const parentNode = element.parentNode;
 
   if (destination === "move-top") {
-    parentNode.prepend(element);
+    // parentNode.prepend(element);
+    applyNewOrder(selectedVideoId, 1);
   } else if (destination === "move-up") {
-    if (element.previousElementSibling) {
-      parentNode.insertBefore(element, element.previousElementSibling);
-    }
+    // if (element.previousElementSibling) {
+    //   parentNode.insertBefore(element, element.previousElementSibling);
+    // }
+    applyNewOrder(selectedVideoId, item.order - 1);
   } else if (destination === "move-down") {
-    if (element.nextElementSibling) {
-      parentNode.insertBefore(element.nextElementSibling, element);
-    }
+    // if (element.nextElementSibling) {
+    //   parentNode.insertBefore(element.nextElementSibling, element);
+    // }
+    applyNewOrder(selectedVideoId, item.order + 1);
   } else if (destination === "move-bottom") {
-    parentNode.appendChild(element);
+    // parentNode.appendChild(element);
+    applyNewOrder(selectedVideoId, database.size);
   }
 
   updateContextbar();
+  updateMultiviewWindow();
 };
 
 const setupContextbar = () => {
