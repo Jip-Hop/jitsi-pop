@@ -112,7 +112,8 @@ const isIframe = () => {
 };
 
 if (hasExtHash(window)) {
-  const setBackgroundAndClass = (callback) => {
+  const prepareDocument = (callback) => {
+    document.documentElement.innerHTML = "";
     if (isIframe()) {
       document.documentElement.classList.add("iframe");
       document.documentElement.style.background = "transparent";
@@ -176,14 +177,14 @@ if (hasExtHash(window)) {
   if (isAboutBlank(window)) {
     if (isMultiview(window)) {
       // Make current page a multiview window
-      setBackgroundAndClass(loadMultiview);
+      prepareDocument(loadMultiview);
     } else {
       // Make current page a video window
-      setBackgroundAndClass(loadVideo);
+      prepareDocument(loadVideo);
     }
   } else {
     // Make current page our main window
-    setBackgroundAndClass(() => {
+    prepareDocument(() => {
       preventLoadingAndEmpty(loadMain);
     });
   }

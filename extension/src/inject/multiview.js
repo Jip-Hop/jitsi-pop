@@ -10,11 +10,11 @@ const parentPoller = () => {
 };
 
 const reflow = () => {
-  const iframes = Array.from(document.querySelectorAll("iframe.show")).sort(
-    (a, b) => {
-      return a.dataset.order - b.dataset.order;
-    }
-  );
+  const iframes = Array.from(
+    document.querySelectorAll("iframe:not(.remove)")
+  ).sort((a, b) => {
+    return a.dataset.order - b.dataset.order;
+  });
 
   const viewportWidth = getViewportWidth();
   const viewportHeight = getViewportHeight();
@@ -26,22 +26,28 @@ const reflow = () => {
     9
   );
 
-  const rootStyle = document.querySelector(":root").style;
-  rootStyle.setProperty("--videoWidth", result.itemWidth + "px");
-  rootStyle.setProperty("--videoHeight", result.itemHeight + "px");
-
   const gridWidth = result.ncols * result.itemWidth;
   const gridHeight = result.nrows * result.itemHeight;
-  const xCenterCompensation = (viewportWidth - gridWidth) / 2;
-  const yCenterCompensation = (viewportHeight - gridHeight) / 2;
+  const xCenterCompensation = -gridWidth / 2;
+  const yCenterCompensation = -gridHeight / 2;
 
   let r = 0,
     c = 0;
 
   iframes.forEach((iframe) => {
+    iframe.style.width = Math.ceil(result.itemWidth); // round up to prevent black lines caused by non-whole pixels
+    iframe.style.height = Math.ceil(result.itemHeight);
+    // if (viewportWidth / viewportHeight > 16 / 9) {
+    //   iframe.style.width = viewportWidth;
+    //   iframe.style.height = (viewportWidth * 9) / 16;
+    // } else {
+    //   iframe.style.width = (viewportHeight * 16) / 9;
+    //   iframe.style.height = viewportHeight;
+    // }
+
     iframe.style.transform = `translate3d(${
       c * result.itemWidth + xCenterCompensation
-    }px, ${r * result.itemHeight + yCenterCompensation}px, 0)`;
+    }px, ${r * result.itemHeight + yCenterCompensation}px, 0) scale(1)`;
 
     c++;
 
@@ -138,22 +144,23 @@ const update = () => {
     if (!currentSelection.has(videoId)) {
       targetFrame = document.createElement("iframe");
       targetFrame.id = "video" + videoId;
-      targetFrame.src = jitsipop.getVideoDocUrlForIframe(videoId);
-      // TODO: fade in video, and don't transition position when adding the first time,
-      // make it only fade and appear already in target position.
 
-      targetFrame.addEventListener("transitionend", transitionEndHandler);
+      targetFrame.onload = () => {
+        setTimeout(() => {
+          targetFrame.classList.add("show");
+        }, 1000);
+        console.log("LOAD");
+      };
+
+      targetFrame.src = jitsipop.getVideoDocUrlForIframe(videoId);
 
       document.body.appendChild(targetFrame);
     } else {
       targetFrame = document.getElementById("video" + videoId);
     }
-    // TODO: redundant classes?
-    // TODO: iframe should have transparent background and fade in the video itself,
-    // but fading both the video and the parent iframe itself can cause them to fade at the same time...
+
     // Perhaps I should leave the fading to video.js and make an API for it, so I can also fade in with the pop-out windows
-    targetFrame.classList.add("show");
-    targetFrame.classList.remove("remove");
+
     targetFrame.dataset.order = jitsipop.getItemOrder(videoId);
   });
 
@@ -162,7 +169,9 @@ const update = () => {
       const targetFrame = document.getElementById("video" + videoId);
       if (targetFrame) {
         // TODO: fade out first, then remove
-        targetFrame.classList.remove("show");
+        targetFrame.removeAttribute("id");
+        targetFrame.addEventListener("transitionend", transitionEndHandler);
+        targetFrame.classList.replace("show", "remove");
         targetFrame.classList.add("remove");
         // targetFrame.remove();
       }
