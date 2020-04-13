@@ -2,6 +2,7 @@
 const jitsipop = (window.jitsipop = window.opener.jitsipop);
 const mainWindow = jitsipop.mainWindow;
 var currentSelection = new Set();
+var resizeTimer;
 
 const parentPoller = () => {
   if (!opener || opener.closed) {
@@ -26,28 +27,77 @@ const reflow = () => {
     9
   );
 
+
+
   const gridWidth = result.ncols * result.itemWidth;
   const gridHeight = result.nrows * result.itemHeight;
-  const xCenterCompensation = -gridWidth / 2;
-  const yCenterCompensation = -gridHeight / 2;
+
+  if (gridWidth / gridHeight > 16 / 9) {
+
+    var newWidth = gridWidth;
+    var newHeight = (gridWidth * 9) / 16;
+
+  } else {
+
+    var newWidth = (gridHeight * 16) / 9;
+    var newHeight = gridHeight;
+
+
+  }
+
+  const scale = result.itemWidth / newWidth;
+
+  const xCenterCompensation = -(newWidth - result.itemWidth) / 2;
+  const yCenterCompensation = -(newHeight - result.itemHeight) / 2;
+
+  // const xCenterCompensation = -newWidth/4;
+  // const yCenterCompensation = -newHeight/4;
+
+  // const xCenterCompensation = -gridWidth / 2;
+  // const yCenterCompensation = -gridHeight / 2;
+
+  // const xCenterCompensation = -viewportWidth / 2;
+  // const yCenterCompensation = -viewportHeight / 2;
+
+  // const xCenterCompensation = (viewportWidth - gridWidth) / 2;
+  // const yCenterCompensation = (viewportHeight - gridHeight) / 2;
+
+  // const xCenterCompensation =
+  //   -result.itemWidth / 2 - (viewportWidth - gridWidth) / 2;
+  // const yCenterCompensation =
+  //   -result.itemHeight / 2 - (viewportHeight - gridHeight) / 2;
+
+  // translate3d(-50%, -75%, 0px) scale(0.5)
+  // translate3d(-50%, -25%, 0px) scale(0.5)
 
   let r = 0,
     c = 0;
 
+  // document.body.style.width = gridWidth;
+  // document.body.style.height = gridHeight;
+
+
+  var rootStyle = document.querySelector(":root").style;
+  // rootStyle.setProperty("--gridWidth", result.ncols * result.itemWidth + "px");
+  // rootStyle.setProperty("--gridHeight", result.nrows * result.itemHeight + "px");
+  rootStyle.setProperty("--videoWidth", newWidth + "px");
+  rootStyle.setProperty("--videoHeight", newHeight + "px");
+
+
+  document.body.style.transform = `translate3d(${
+    -gridWidth/2
+  }px, ${-gridHeight/2}px, 0)`;
+
   iframes.forEach((iframe) => {
-    iframe.style.width = Math.ceil(result.itemWidth); // round up to prevent black lines caused by non-whole pixels
-    iframe.style.height = Math.ceil(result.itemHeight);
-    // if (viewportWidth / viewportHeight > 16 / 9) {
-    //   iframe.style.width = viewportWidth;
-    //   iframe.style.height = (viewportWidth * 9) / 16;
-    // } else {
-    //   iframe.style.width = (viewportHeight * 16) / 9;
-    //   iframe.style.height = viewportHeight;
-    // }
+    // iframe.style.width = Math.ceil(result.itemWidth); // round up to prevent black lines caused by non-whole pixels
+    // iframe.style.height = Math.ceil(result.itemHeight);
+
+    // iframe.style.width = newWidth;
+    // iframe.style.height = newHeight;
 
     iframe.style.transform = `translate3d(${
       c * result.itemWidth + xCenterCompensation
-    }px, ${r * result.itemHeight + yCenterCompensation}px, 0) scale(1)`;
+    }px, ${r * result.itemHeight + yCenterCompensation}px, 0) scale(${scale})`;
 
     c++;
 
@@ -148,8 +198,8 @@ const update = () => {
       targetFrame.onload = () => {
         setTimeout(() => {
           targetFrame.classList.add("show");
-        }, 1000);
-        console.log("LOAD");
+        }, 100);
+        // console.log("LOAD");
       };
 
       targetFrame.src = jitsipop.getVideoDocUrlForIframe(videoId);
@@ -190,6 +240,8 @@ const setup = () => {
     // Remove this window from the array of open pop-outs in the main window
     if (mainWindow && !mainWindow.closed) {
       // jitsipop.multiviewClosedHandler();
+      // Reset to no selected videos for multiview
+      jitsipop.multiviewSelection.clear();
       jitsipop.multiviewWindow = null;
     }
 
@@ -205,8 +257,12 @@ const setup = () => {
     jitsipop.multiviewWindow = window;
   }
 
-  // TODO: debounce resize
-  window.addEventListener("resize", reflow);
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      reflow();
+    }, 250);
+  });
 
   update();
 

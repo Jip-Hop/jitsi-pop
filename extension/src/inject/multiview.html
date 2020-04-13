@@ -10,33 +10,55 @@
         border: 0;
       }
 
-      html,
-      body {
+      html {
         background: black;
         width: 100vw;
         height: 100vh;
         overflow: hidden;
+        position: relative;
+      }
+
+      body {
+        position: absolute;
+        top: 50vh;
+        left: 50vw;
+        transform: translate3d(-50%, -50%, 0);
+        transition: all 0.5s ease;
+        width: 0;
+        height: 0;
+        overflow: visible;
       }
 
       iframe {
-        transition: all 0.5s ease;
+        height: var(--videoHeight);
+        width: var(--videoWidth);
+        transition: transform 0.5s ease, opacity 0.5s ease;
         pointer-events: none;
         position: absolute;
-        width: 0;
-        height: 0;
-        top: 50vh;
-        left: 50vw;
-        transform: translate3d(-50%, -50%, 0px) scale(0);
+        /* width: 0;
+        height: 0; */
+        /* top: 50vh;
+        left: 50vw; */
+        /* top: 50%;
+        left: 50%; */
+        width: 100vw;
+        height: 100vh;
+        top: 0;
+        left: 0;
+        transform: translate3d(0, 0, 0) scale(0);
         opacity: 0;
         backface-visibility: hidden;
+        /* transform-origin: top left; */
       }
 
       iframe.show {
         opacity: 1;
+        z-index: 1;
       }
 
       iframe.remove {
         opacity: 0;
+        z-index: 0;
       }
     </style>
   </head>
