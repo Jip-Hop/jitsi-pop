@@ -3,6 +3,9 @@ const jitsipop = (window.jitsipop = window.opener.jitsipop);
 const mainWindow = jitsipop.mainWindow;
 var currentSelection = new Set();
 
+const iframeWidth = 1280;
+const iframeHeight = 720;
+
 const parentPoller = () => {
   if (!opener || opener.closed) {
     window.close();
@@ -52,7 +55,7 @@ const reflow = () => {
 
     iframe.style.transform = `translate3d(${
       c * result.itemWidth + xCenterCompensation
-    }px, ${r * result.itemHeight + yCenterCompensation}px, 0) scale(${result.itemWidth/1280})`;
+    }px, ${r * result.itemHeight + yCenterCompensation}px, 0) scale(${result.itemWidth/iframeWidth})`;
 
     c++;
 
@@ -132,8 +135,6 @@ const fitToContainer = (
   };
 };
 
-// TODO: fade new videos in with a lower z-index,
-// listen for fade complete then set z-index to normal???
 const transitionEndHandler = (e) => {
   console.log(e.propertyName, e);
   if (e.propertyName === "opacity") {
@@ -158,17 +159,18 @@ const update = () => {
           targetFrame.classList.add("show");
         }, 500);
         console.log("LOAD");
+        // console.log(targetFrame.contentWindow.document, targetFrame.contentWindow.document.innerHTML);
       };
 
       targetFrame.src = jitsipop.getVideoDocUrlForIframe(videoId);
-      // targetFrame.src = "about:blank";
 
+      targetFrame.style.width = iframeWidth + "px";
+      targetFrame.style.height = iframeHeight + "px";
+      // Prepend so it will appear from underneath all the other frames
       document.body.prepend(targetFrame);
     } else {
       targetFrame = document.getElementById("video" + videoId);
     }
-
-    // Perhaps I should leave the fading to video.js and make an API for it, so I can also fade in with the pop-out windows
 
     targetFrame.dataset.order = jitsipop.getItemOrder(videoId);
   });
@@ -177,12 +179,11 @@ const update = () => {
     if (!newSet.has(videoId)) {
       const targetFrame = document.getElementById("video" + videoId);
       if (targetFrame) {
-        // TODO: fade out first, then remove
+        // Fade out first, then remove
         targetFrame.removeAttribute("id");
         targetFrame.addEventListener("transitionend", transitionEndHandler);
         targetFrame.classList.replace("show", "remove");
         targetFrame.classList.add("remove");
-        // targetFrame.remove();
       }
     }
   });
