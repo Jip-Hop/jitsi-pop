@@ -2,7 +2,7 @@
 const jitsipop = (window.jitsipop = window.opener.jitsipop);
 const mainWindow = jitsipop.mainWindow;
 var currentSelection = new Set();
-var resizeTimer;
+var throttled = false;
 
 const parentPoller = () => {
   if (!opener || opener.closed) {
@@ -27,28 +27,48 @@ const reflow = () => {
     9
   );
 
-
+  const oversizedItemWidth = viewportWidth;
+  const oversizedItemHeight = Math.ceil((viewportWidth * 9) / 16); // round up to prevent black lines caused by non-whole pixels
 
   const gridWidth = result.ncols * result.itemWidth;
   const gridHeight = result.nrows * result.itemHeight;
 
-  if (gridWidth / gridHeight > 16 / 9) {
+  const oversizedGridWidth = result.ncols * oversizedItemWidth;
+  const oversizedGridHeight = result.nrows * oversizedItemHeight;
 
-    var newWidth = gridWidth;
-    var newHeight = (gridWidth * 9) / 16;
+  const gridScale = gridWidth / oversizedGridWidth;
 
-  } else {
+  // document.body.style.transform = `translate3d(${
+  //   (viewportWidth - gridWidth) / gridScale / 2
+  // }px, ${
+  //   (viewportHeight - gridHeight) / gridScale / 2
+  // }px, 0) scale(${gridScale})`;
 
-    var newWidth = (gridHeight * 16) / 9;
-    var newHeight = gridHeight;
+  document.body.style.maxWidth = gridWidth + "px";
+  document.body.style.maxHeight = gridHeight + "px";
+  // document.body.style.transform = `scale(${gridScale})`;
 
+  // return;
 
-  }
+  // if (gridWidth / gridHeight > 16 / 9) {
 
-  const scale = result.itemWidth / newWidth;
+  //   var newWidth = gridWidth;
+  //   var newHeight = (gridWidth * 9) / 16;
 
-  const xCenterCompensation = -(newWidth - result.itemWidth) / 2;
-  const yCenterCompensation = -(newHeight - result.itemHeight) / 2;
+  // } else {
+
+  //   var newWidth = (gridHeight * 16) / 9;
+  //   var newHeight = gridHeight;
+
+  // }
+
+  // const scale = result.itemWidth / newWidth;
+
+  // const xCenterCompensation = 0;
+  // const yCenterCompensation = 0;
+
+  // const xCenterCompensation = -(newWidth - result.itemWidth) / 2;
+  // const yCenterCompensation = -(newHeight - result.itemHeight) / 2;
 
   // const xCenterCompensation = -newWidth/4;
   // const yCenterCompensation = -newHeight/4;
@@ -61,6 +81,9 @@ const reflow = () => {
 
   // const xCenterCompensation = (viewportWidth - gridWidth) / 2;
   // const yCenterCompensation = (viewportHeight - gridHeight) / 2;
+
+  const xCenterCompensation = -(viewportWidth * gridScale / 2);
+  const yCenterCompensation = -((viewportWidth * (9 / 16) * gridScale) / 2);
 
   // const xCenterCompensation =
   //   -result.itemWidth / 2 - (viewportWidth - gridWidth) / 2;
@@ -75,7 +98,7 @@ const reflow = () => {
 
   // document.body.style.width = gridWidth;
   // document.body.style.height = gridHeight;
-
+  /*
 
   var rootStyle = document.querySelector(":root").style;
   // rootStyle.setProperty("--gridWidth", result.ncols * result.itemWidth + "px");
@@ -87,7 +110,7 @@ const reflow = () => {
   document.body.style.transform = `translate3d(${
     -gridWidth/2
   }px, ${-gridHeight/2}px, 0)`;
-
+*/
   iframes.forEach((iframe) => {
     // iframe.style.width = Math.ceil(result.itemWidth); // round up to prevent black lines caused by non-whole pixels
     // iframe.style.height = Math.ceil(result.itemHeight);
@@ -95,9 +118,21 @@ const reflow = () => {
     // iframe.style.width = newWidth;
     // iframe.style.height = newHeight;
 
+    // iframe.style.transform = `translate3d(${
+    //   c * result.itemWidth + xCenterCompensation
+    // }px, ${r * result.itemHeight + yCenterCompensation}px, 0)`;
+
     iframe.style.transform = `translate3d(${
-      c * result.itemWidth + xCenterCompensation
-    }px, ${r * result.itemHeight + yCenterCompensation}px, 0) scale(${scale})`;
+      -oversizedItemWidth/2 + c * result.itemWidth
+    }px, ${
+      -oversizedItemHeight/2 + r * result.itemHeight
+    }px, 0) scale(${gridScale})`;
+
+    // translate3d(, calc(-50% - 0px), 0px) scale(0.330864)
+
+    // iframe.style.transform = `translate3d(${c * oversizedItemWidth}px, ${
+    //   r * oversizedItemHeight
+    // }px, 0)`;
 
     c++;
 
@@ -258,10 +293,17 @@ const setup = () => {
   }
 
   window.addEventListener("resize", () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => {
+    if (!throttled) {
+      // clearTimeout(resizeTimer);
+      // resizeTimer = setTimeout(() => {
       reflow();
-    }, 250);
+      throttled = true;
+      // }, 250);
+      setTimeout(function () {
+        reflow();
+        throttled = false;
+      }, 100);
+    }
   });
 
   update();
