@@ -148,6 +148,10 @@ const update = () => {
     } else {
       targetFrame = document.getElementById("video" + videoId);
     }
+    // TODO: redundant classes?
+    // TODO: iframe should have transparent background and fade in the video itself,
+    // but fading both the video and the parent iframe itself can cause them to fade at the same time...
+    // Perhaps I should leave the fading to video.js and make an API for it, so I can also fade in with the pop-out windows
     targetFrame.classList.add("show");
     targetFrame.classList.remove("remove");
     targetFrame.dataset.order = jitsipop.getItemOrder(videoId);

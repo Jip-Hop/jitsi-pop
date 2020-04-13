@@ -102,6 +102,9 @@ const setup = () => {
     jitsipop.receiveHighRes(participantId, false);
   };
 
+  if (inIframe) {
+    document.documentElement.classList.add("iframe");
+  }
   targetVid = document.createElement("video");
   targetVid.muted = true;
   targetVid.autoplay = true;

@@ -112,9 +112,13 @@ const isIframe = () => {
 };
 
 if (hasExtHash(window)) {
-  const makeBlack = (callback) => {
-    document.documentElement.innerHTML = "";
-    document.documentElement.style.background = "black";
+  const setBackgroundAndClass = (callback) => {
+    if (isIframe()) {
+      document.documentElement.classList.add("iframe");
+      document.documentElement.style.background = "transparent";
+    } else {
+      document.documentElement.style.background = "black";
+    }
     if (typeof callback === "function") {
       callback();
     }
@@ -172,14 +176,14 @@ if (hasExtHash(window)) {
   if (isAboutBlank(window)) {
     if (isMultiview(window)) {
       // Make current page a multiview window
-      makeBlack(loadMultiview);
+      setBackgroundAndClass(loadMultiview);
     } else {
       // Make current page a video window
-      makeBlack(loadVideo);
+      setBackgroundAndClass(loadVideo);
     }
   } else {
     // Make current page our main window
-    makeBlack(() => {
+    setBackgroundAndClass(() => {
       preventLoadingAndEmpty(loadMain);
     });
   }
