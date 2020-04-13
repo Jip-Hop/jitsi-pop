@@ -2,7 +2,6 @@
 const jitsipop = (window.jitsipop = window.opener.jitsipop);
 const mainWindow = jitsipop.mainWindow;
 var currentSelection = new Set();
-var throttled = false;
 
 const parentPoller = () => {
   if (!opener || opener.closed) {
@@ -27,112 +26,33 @@ const reflow = () => {
     9
   );
 
-  const oversizedItemWidth = viewportWidth;
-  const oversizedItemHeight = Math.ceil((viewportWidth * 9) / 16); // round up to prevent black lines caused by non-whole pixels
-
   const gridWidth = result.ncols * result.itemWidth;
   const gridHeight = result.nrows * result.itemHeight;
-
-  const oversizedGridWidth = result.ncols * oversizedItemWidth;
-  const oversizedGridHeight = result.nrows * oversizedItemHeight;
-
-  const gridScale = gridWidth / oversizedGridWidth;
-
-  // document.body.style.transform = `translate3d(${
-  //   (viewportWidth - gridWidth) / gridScale / 2
-  // }px, ${
-  //   (viewportHeight - gridHeight) / gridScale / 2
-  // }px, 0) scale(${gridScale})`;
-
-  document.body.style.maxWidth = gridWidth + "px";
-  document.body.style.maxHeight = gridHeight + "px";
-  // document.body.style.transform = `scale(${gridScale})`;
-
-  // return;
-
-  // if (gridWidth / gridHeight > 16 / 9) {
-
-  //   var newWidth = gridWidth;
-  //   var newHeight = (gridWidth * 9) / 16;
-
-  // } else {
-
-  //   var newWidth = (gridHeight * 16) / 9;
-  //   var newHeight = gridHeight;
-
-  // }
-
-  // const scale = result.itemWidth / newWidth;
-
-  // const xCenterCompensation = 0;
-  // const yCenterCompensation = 0;
-
-  // const xCenterCompensation = -(newWidth - result.itemWidth) / 2;
-  // const yCenterCompensation = -(newHeight - result.itemHeight) / 2;
-
-  // const xCenterCompensation = -newWidth/4;
-  // const yCenterCompensation = -newHeight/4;
-
-  // const xCenterCompensation = -gridWidth / 2;
-  // const yCenterCompensation = -gridHeight / 2;
-
-  // const xCenterCompensation = -viewportWidth / 2;
-  // const yCenterCompensation = -viewportHeight / 2;
-
-  // const xCenterCompensation = (viewportWidth - gridWidth) / 2;
-  // const yCenterCompensation = (viewportHeight - gridHeight) / 2;
-
-  const xCenterCompensation = -(viewportWidth * gridScale / 2);
-  const yCenterCompensation = -((viewportWidth * (9 / 16) * gridScale) / 2);
-
-  // const xCenterCompensation =
-  //   -result.itemWidth / 2 - (viewportWidth - gridWidth) / 2;
-  // const yCenterCompensation =
-  //   -result.itemHeight / 2 - (viewportHeight - gridHeight) / 2;
-
-  // translate3d(-50%, -75%, 0px) scale(0.5)
-  // translate3d(-50%, -25%, 0px) scale(0.5)
+  const xCenterCompensation = -gridWidth / 2;
+  const yCenterCompensation = -gridHeight / 2;
 
   let r = 0,
     c = 0;
 
-  // document.body.style.width = gridWidth;
-  // document.body.style.height = gridHeight;
-  /*
-
-  var rootStyle = document.querySelector(":root").style;
-  // rootStyle.setProperty("--gridWidth", result.ncols * result.itemWidth + "px");
-  // rootStyle.setProperty("--gridHeight", result.nrows * result.itemHeight + "px");
-  rootStyle.setProperty("--videoWidth", newWidth + "px");
-  rootStyle.setProperty("--videoHeight", newHeight + "px");
-
-
-  document.body.style.transform = `translate3d(${
-    -gridWidth/2
-  }px, ${-gridHeight/2}px, 0)`;
-*/
   iframes.forEach((iframe) => {
     // iframe.style.width = Math.ceil(result.itemWidth); // round up to prevent black lines caused by non-whole pixels
     // iframe.style.height = Math.ceil(result.itemHeight);
 
-    // iframe.style.width = newWidth;
-    // iframe.style.height = newHeight;
+    // iframe.style.width = "480px";
+    // iframe.style.height = "270px";
+    
 
-    // iframe.style.transform = `translate3d(${
-    //   c * result.itemWidth + xCenterCompensation
-    // }px, ${r * result.itemHeight + yCenterCompensation}px, 0)`;
+    // if (viewportWidth / viewportHeight > 16 / 9) {
+    //   iframe.style.width = viewportWidth;
+    //   iframe.style.height = (viewportWidth * 9) / 16;
+    // } else {
+    //   iframe.style.width = (viewportHeight * 16) / 9;
+    //   iframe.style.height = viewportHeight;
+    // }
 
     iframe.style.transform = `translate3d(${
-      -oversizedItemWidth/2 + c * result.itemWidth
-    }px, ${
-      -oversizedItemHeight/2 + r * result.itemHeight
-    }px, 0) scale(${gridScale})`;
-
-    // translate3d(, calc(-50% - 0px), 0px) scale(0.330864)
-
-    // iframe.style.transform = `translate3d(${c * oversizedItemWidth}px, ${
-    //   r * oversizedItemHeight
-    // }px, 0)`;
+      c * result.itemWidth + xCenterCompensation
+    }px, ${r * result.itemHeight + yCenterCompensation}px, 0) scale(${result.itemWidth/1280})`;
 
     c++;
 
@@ -212,6 +132,8 @@ const fitToContainer = (
   };
 };
 
+// TODO: fade new videos in with a lower z-index,
+// listen for fade complete then set z-index to normal???
 const transitionEndHandler = (e) => {
   console.log(e.propertyName, e);
   if (e.propertyName === "opacity") {
@@ -230,16 +152,18 @@ const update = () => {
       targetFrame = document.createElement("iframe");
       targetFrame.id = "video" + videoId;
 
+      // TODO: wait until video starts playing
       targetFrame.onload = () => {
         setTimeout(() => {
           targetFrame.classList.add("show");
-        }, 100);
-        // console.log("LOAD");
+        }, 500);
+        console.log("LOAD");
       };
 
       targetFrame.src = jitsipop.getVideoDocUrlForIframe(videoId);
+      // targetFrame.src = "about:blank";
 
-      document.body.appendChild(targetFrame);
+      document.body.prepend(targetFrame);
     } else {
       targetFrame = document.getElementById("video" + videoId);
     }
@@ -275,8 +199,6 @@ const setup = () => {
     // Remove this window from the array of open pop-outs in the main window
     if (mainWindow && !mainWindow.closed) {
       // jitsipop.multiviewClosedHandler();
-      // Reset to no selected videos for multiview
-      jitsipop.multiviewSelection.clear();
       jitsipop.multiviewWindow = null;
     }
 
@@ -292,19 +214,8 @@ const setup = () => {
     jitsipop.multiviewWindow = window;
   }
 
-  window.addEventListener("resize", () => {
-    if (!throttled) {
-      // clearTimeout(resizeTimer);
-      // resizeTimer = setTimeout(() => {
-      reflow();
-      throttled = true;
-      // }, 250);
-      setTimeout(function () {
-        reflow();
-        throttled = false;
-      }, 100);
-    }
-  });
+  // TODO: debounce resize
+  window.addEventListener("resize", reflow);
 
   update();
 
