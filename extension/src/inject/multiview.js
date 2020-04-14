@@ -125,9 +125,11 @@ const fitToContainer = (
 };
 
 const transitionEndHandler = (e) => {
-  console.log(e.propertyName, e);
   if (e.propertyName === "opacity") {
-    if (e.target.classList.contains("remove")) {
+    if (
+      e.target.classList.contains("remove") &&
+      window.getComputedStyle(e.target).opacity === "0"
+    ) {
       e.target.remove();
     }
   }
@@ -168,11 +170,19 @@ const update = () => {
     if (!newSet.has(videoId)) {
       const targetFrame = document.getElementById("video" + videoId);
       if (targetFrame) {
-        // Fade out first, then remove
         targetFrame.removeAttribute("id");
-        targetFrame.addEventListener("transitionend", transitionEndHandler);
-        targetFrame.classList.replace("show", "remove");
-        targetFrame.classList.add("remove");
+        if (window.getComputedStyle(targetFrame).opacity === "0") {
+          // Not faded in, remove immediately
+          targetFrame.remove();
+        } else {
+          // Fade out first, then remove
+          targetFrame.addEventListener("transitionend", transitionEndHandler);
+          if (targetFrame.classList.contains("show")) {
+            targetFrame.classList.replace("show", "remove");
+          } else {
+            targetFrame.classList.add("remove");
+          }
+        }
       }
     }
   });
