@@ -144,21 +144,66 @@
         background: gray;
       }
 
-      #contextbar > button {
-        margin: 0 10px 5px 10px;
+      #contextbar > button,
+      #menubar > button {
         display: flex;
         justify-content: space-between;
         align-items: center;
       }
 
+      #contextbar > button {
+        margin: 0 10px 5px 10px;
+      }
+
       #contextbar > button > .fas,
-      #contextbar > button > .far {
+      #contextbar > button > .far,
+      #menubar > button > .fas,
+      #menubar > button > .far {
         font-size: 1.5em;
         width: 20px;
       }
 
-      #meet {
+      #menubar > button {
+        margin: 5px;
+        background: transparent;
+        color: #4c9aff;
+        border-bottom: 2px solid #4c9aff;
+        box-sizing: border-box;
+        border-radius: 0;
+      }
+
+      #menubar > button:first-of-type {
+        margin-left: 0;
+      }
+
+      #menubar > button:last-of-type {
+        margin-right: 0;
+      }
+
+      #menubar {
+        width: calc(100% - 10px);
+        height: 40px;
+        transition: all 0.25s ease;
+        border-bottom: 2px solid #b8c7e0;
+        box-sizing: border-box;
+        margin: 0 5px;
+      }
+
+      #menubar:hover {
+        height: 50vh;
+        /* overflow-y: scroll; */
+      }
+
+      #main {
         height: 100%;
+        flex: auto;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #meet {
         flex: auto;
         position: relative;
         overflow: hidden;
@@ -230,9 +275,16 @@
       </button>
     </div>
     <div id="sidebar"></div>
-    <div id="meet">
-      <div id="reconnect-wrapper">
-        <button id="reconnect">Reconnect</button>
+    <div id="main">
+      <div id="menubar">
+        <button id="sound-settings-button">
+          Sound <i class="fas fa-volume-off"></i>
+        </button>
+      </div>
+      <div id="meet">
+        <div id="reconnect-wrapper">
+          <button id="reconnect">Reconnect</button>
+        </div>
       </div>
     </div>
   </body>
