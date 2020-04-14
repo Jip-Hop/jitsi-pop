@@ -2,7 +2,7 @@ window.servers = [
   // "beta.meet.jit.si",
   "meet.jit.si",
   "8x8.vc",
-  "jitsi.riot.im"
+  "jitsi.riot.im",
 ];
 
 import { options } from "./jitsiConfig.js";
@@ -35,23 +35,23 @@ const conferenceWindowOpen = () => {
   return window.mainAppWindowObject && !window.mainAppWindowObject.closed;
 };
 
-const setConnectionState = int => {
+const setConnectionState = (int) => {
   connectionState = int;
   if (connectionState === 0) {
     clearInterval(windowClosedPoller);
     chrome.browserAction.setBadgeText({ text: "" });
     // Send message to notify the browser action popup
     chrome.runtime.sendMessage({
-      type: "videoConferenceLeft"
+      type: "videoConferenceLeft",
     });
   } else if (connectionState === 1) {
     chrome.browserAction.setBadgeBackgroundColor({
-      color: [255, 153, 31, 255]
+      color: [255, 153, 31, 255],
     });
     chrome.browserAction.setBadgeText({ text: " " });
   } else if (connectionState === 2) {
     chrome.browserAction.setBadgeBackgroundColor({
-      color: [65, 216, 115, 255]
+      color: [65, 216, 115, 255],
     });
     chrome.browserAction.setBadgeText({ text: " " });
   }
@@ -71,7 +71,7 @@ window.openPopout = (newRoomName) => {
 
   let recentRoomNames = JSON.parse(localStorage.getItem("recentRooms")) || [];
   // If roomName is already in the list, get rid of it
-  recentRoomNames = recentRoomNames.filter(e => e.roomName !== roomName);
+  recentRoomNames = recentRoomNames.filter((e) => e.roomName !== roomName);
   // Then add it to the front
   recentRoomNames.unshift({ roomName: roomName, timestamp: Date.now() });
   localStorage.setItem("recentRooms", JSON.stringify(recentRoomNames));
@@ -80,9 +80,9 @@ window.openPopout = (newRoomName) => {
   window.mainAppWindowObject = window.open(
     openedUrl,
     windowTarget,
-    `status=no,menubar=no,width=${width},height=${height},left=${screen.width /
-      2 -
-      width / 2},top=${screen.height / 2 - height / 2}`
+    `status=no,menubar=no,width=${width},height=${height},left=${
+      screen.width / 2 - width / 2
+    },top=${screen.height / 2 - height / 2}`
   );
 
   setConnectionState(1);
@@ -107,7 +107,7 @@ window.openPopout = (newRoomName) => {
 window.focusAllWindows = () => {
   // Focus from here, calling .focus() in content script is limited
 
-  videoPopupBrowserTabs.forEach(tab => {
+  videoPopupBrowserTabs.forEach((tab) => {
     tryUpdate(tab.windowId, { focused: true });
   });
   if (mainAppBrowserTab) {
@@ -128,14 +128,14 @@ window.disconnect = () => {
   }
 };
 
-chrome.tabs.onRemoved.addListener(tabId => {
+chrome.tabs.onRemoved.addListener((tabId) => {
   if (mainAppBrowserTab && mainAppBrowserTab.id === tabId) {
     // Main window closed
     setConnectionState(0);
     mainAppBrowserTab = null;
   } else {
     // Check if video popup is closed
-    videoPopupBrowserTabs = videoPopupBrowserTabs.filter(function(tab) {
+    videoPopupBrowserTabs = videoPopupBrowserTabs.filter(function (tab) {
       if (tab.id === tabId) {
         // Video popup is closed
         return false;
@@ -146,14 +146,14 @@ chrome.tabs.onRemoved.addListener(tabId => {
   }
 });
 
-chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (message.type === "mainWinLoad") {
     mainAppBrowserTab = sender.tab;
     sendResponse({ options: options });
   } else if (message.type === "videoWinLoad") {
     videoPopupBrowserTabs.push(sender.tab);
   } else if (message.type === "toggleFullScreen") {
-    chrome.windows.get(sender.tab.windowId, {}, win => {
+    chrome.windows.get(sender.tab.windowId, {}, (win) => {
       if (chrome.runtime.lastError) {
         console.log(chrome.runtime.lastError.message);
       } else {
@@ -163,12 +163,14 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     });
   } else if (message.type === "videoConferenceLeft") {
     setConnectionState(0);
+  } else if (message.type === "videoConferenceConnecting") {
+    setConnectionState(1);
   } else if (message.type === "videoConferenceJoined") {
     setConnectionState(2);
   }
 });
 
-chrome.runtime.onMessageExternal.addListener(function(
+chrome.runtime.onMessageExternal.addListener(function (
   message,
   sender,
   sendResponse
@@ -178,12 +180,12 @@ chrome.runtime.onMessageExternal.addListener(function(
     if (serverIndex === -1) {
       // Unsupported server
       sendResponse({
-        deepLink: false
+        deepLink: false,
       });
     } else {
-      const doDeepLink = focusOnly => {
+      const doDeepLink = (focusOnly) => {
         sendResponse({
-          deepLink: true
+          deepLink: true,
         });
 
         chrome.tabs.remove(sender.tab.id, () => {
@@ -209,7 +211,7 @@ chrome.runtime.onMessageExternal.addListener(function(
           );
           if (shouldEmbed) {
             sendResponse({
-              deepLink: false
+              deepLink: false,
             });
           } else {
             doDeepLink(true);
@@ -225,7 +227,7 @@ chrome.runtime.onMessageExternal.addListener(function(
             doDeepLink();
           } else {
             sendResponse({
-              deepLink: false
+              deepLink: false,
             });
           }
         }

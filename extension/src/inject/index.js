@@ -649,8 +649,18 @@ const setup = () => {
     }
   });
 
+  api.addEventListener("suspendDetected", () => {
+
+    videoOfflineHandler(myUserID);
+
+    // Make status icon show orange
+    tryRuntimeSendMessage({
+      type: "videoConferenceConnecting",
+    });
+  });
+
   api.addEventListener("videoConferenceLeft", () => {
-    // TODO: make all videos offline...
+
     videoOfflineHandler(myUserID);
 
     tryRuntimeSendMessage({
