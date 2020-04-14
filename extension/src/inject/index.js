@@ -35,7 +35,7 @@ const extId = chrome.runtime.id;
 const bc = new BroadcastChannel("popout_jitsi_channel");
 
 var videoIdCounter = 0;
-var myDisplayName;
+var myDisplayName, myUserID;
 
 const receiveHighRes = (participantId, shouldReceiveHighRes) => {
   if (shouldReceiveHighRes) {
@@ -66,7 +66,7 @@ const getFormattedDisplayName = (participantId) => {
   return formatDisplayName(item ? item.displayName : "");
 };
 
-const getItemByParticipantId = (participantId, status) => {
+const getItemByParticipantId = (participantId) => {
   for (let item of database.values()) {
     if (item.participantId === participantId) {
       return item;
@@ -122,8 +122,11 @@ const getSidebarVideoWrapperByParticipantId = (participantId) => {
 
 const addOrDeleteVideo = (videoId, win, type, action) => {
   console.log("addOrDeleteVideo", videoId, win, type, action);
-  console.log("addOrDeleteVideo multiviewSelection", new Set(multiviewSelection));
-  
+  console.log(
+    "addOrDeleteVideo multiviewSelection",
+    new Set(multiviewSelection)
+  );
+
   const failMessage = () => {
     console.trace(`Couldn't ${action} ${type} for videoId`, videoId, item);
   };
@@ -156,73 +159,40 @@ const addOrDeleteVideo = (videoId, win, type, action) => {
   }
 
   if (item.participantId) {
-    console.log("addOrDeleteVideo", multiviewSelection.has(videoId), item.windows, item.windows && item.windows.size);
+    console.log(
+      "addOrDeleteVideo",
+      multiviewSelection.has(videoId),
+      item.windows,
+      item.windows && item.windows.size
+    );
     if (
       !multiviewSelection.has(videoId) &&
       (!item.windows || !item.windows.size)
     ) {
-      console.log("addOrDeleteVideo item.windows", new Set(item.windows), "participantId", item.participantId, "DONT receiveHighRes");
+      console.log(
+        "addOrDeleteVideo item.windows",
+        new Set(item.windows),
+        "participantId",
+        item.participantId,
+        "DONT receiveHighRes"
+      );
       // Video is no longer open in multiview or pop-out window,
       // stop receiving high resolution video
       receiveHighRes(item.participantId, false);
     } else {
-      console.log("addOrDeleteVideo item.windows", new Set(item.windows), "participantId", item.participantId, "DO receiveHighRes");
+      console.log(
+        "addOrDeleteVideo item.windows",
+        new Set(item.windows),
+        "participantId",
+        item.participantId,
+        "DO receiveHighRes"
+      );
       // Video is still in multiview or pop-out window,
       // receive high resolution video
       receiveHighRes(item.participantId, true);
     }
   }
 };
-
-// const addIframe = (videoId, win) => {
-//   addOrDeleteVideo(videoId, win, "iframe", "add");
-// };
-
-// const deleteIframe = (videoId, win) => {
-//   addOrDeleteVideo(videoId, win, "iframe", "delete");
-// };
-
-// const addWindow = (videoId, win) => {
-//   addOrDeleteVideo(videoId, win, "window", "add");
-// };
-
-// const deleteWindow = (videoId, win) => {
-//   addOrDeleteVideo(videoId, win, "window", "delete");
-// };
-
-// const deleteIframe = (videoId, iframe) => {
-//   const item = getItem(videoId);
-//   if (item) {
-//     if (!multiviewSelection.has(videoId)) {
-//       if (item.participantId) {
-//         receiveHighRes(item.participantId, false);
-//       }
-//     }
-//     if (item.iframes && item.iframes.has(iframe)) {
-//       item.iframes.delete(iframe);
-//     }
-//   } else {
-//     console.trace("Couldn't delete iframe for videoId", videoId, item);
-//   }
-// };
-
-// const addWindow = (videoId, window) => {
-//   const item = getItem(videoId);
-//   if (item && item.windows) {
-//     item.windows.add(window);
-//   } else {
-//     console.trace("Couldn't add window for videoId", videoId, item);
-//   }
-// };
-
-// const deleteWindow = (videoId, window) => {
-//   const item = getItem(videoId);
-//   if (item && item.windows && item.windows.has(window)) {
-//     item.windows.delete(window);
-//   } else {
-//     console.trace("Couldn't delete window for videoId", videoId, item);
-//   }
-// };
 
 const closeAllWindows = () => {
   // TODO: also close multiview window in the future
@@ -494,15 +464,24 @@ const videoOnlineHandler = (participantId) => {
   };
 
   // Search for existing wrapper which matches participantId
-  var sidebarVideoWrapper = getSidebarVideoWrapperByParticipantId(
-    participantId
-  );
+  var sidebarVideoWrapper;
   var videoId;
   var didReuseWrapper = false;
 
-  // TODO: there may be a bug after conference re-join (e.g. connection lost)
-  // when reusing wrappers if the local participant has the same displayName
-  // as some of the other participants... It will occupy more than 1 wrapper.
+  const setVideoIdAndWrapper = (participantId) => {
+    const item = getItemByParticipantId(participantId);
+    if (item && item.sidebarVideoWrapper) {
+      sidebarVideoWrapper = item.sidebarVideoWrapper;
+      videoId = item.videoId;
+      didReuseWrapper = true;
+    }
+  };
+
+  // When a user re-connects with the same participantId,
+  // we can just reuse it's wrapper and update the database.
+  // This will be the case when the local user reconnects after e.g. a dropped connection,
+  // because we already swapped the participantId from old to new on videoConferenceJoined.
+  setVideoIdAndWrapper(participantId);
 
   // Check if we can reuse an empty wrapper for same displayName
   if (!sidebarVideoWrapper) {
@@ -668,6 +647,9 @@ const setup = () => {
   });
 
   api.addEventListener("videoConferenceLeft", () => {
+    // TODO: make all videos offline...
+    videoOfflineHandler(myUserID);
+
     tryRuntimeSendMessage({
       type: "videoConferenceLeft",
     });
@@ -677,11 +659,26 @@ const setup = () => {
   });
 
   api.addEventListener("videoConferenceJoined", (e) => {
+    const newUserID = e.id;
+    const newDisplayName = e.displayName;
+
+    if (myUserID) {
+      const item = getItemByParticipantId(myUserID);
+      if (item) {
+        // Swap new participantId of local user,
+        // e.g. when we reconnect after dropped internet connection
+        item.participantId = newUserID;
+      }
+    }
+
+    myDisplayName = newDisplayName;
+    myUserID = newUserID;
+
     tryRuntimeSendMessage({
       type: "videoConferenceJoined",
     });
 
-    videoOnlineHandler(e.id, e.displayName);
+    videoOnlineHandler(newUserID, myDisplayName);
 
     // TODO: wait a little, then ask everyone if one of them is moderator.
     // If no moderator yet, start moderating and check display name of each participant.
@@ -742,7 +739,7 @@ const setup = () => {
     }
 
     // For local user
-    if (participantId === api._myUserID) {
+    if (participantId === myUserID) {
       myDisplayName = displayName;
       if (
         displayName !== "" &&
@@ -815,11 +812,6 @@ jitsipop.multiviewSelection = multiviewSelection;
 jitsipop.getFormattedDisplayName = getFormattedDisplayName;
 jitsipop.getParticipantId = getParticipantId;
 jitsipop.getParticipantVideo = getParticipantVideo;
-// jitsipop.receiveHighRes = receiveHighRes;
-// jitsipop.addIframe = addIframe;
-// jitsipop.deleteIframe = deleteIframe;
-// jitsipop.addWindow = addWindow;
-// jitsipop.deleteWindow = deleteWindow;
 jitsipop.addOrDeleteVideo = addOrDeleteVideo;
 jitsipop.getVideoDocUrlForIframe = getVideoDocUrlForIframe;
 jitsipop.getItemOrder = getItemOrder;
