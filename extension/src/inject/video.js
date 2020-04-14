@@ -13,6 +13,12 @@ const mainWindow = jitsipop.mainWindow;
 
 var sourceVid, targetVid, displayName, participantId, videoId;
 
+const handleFirstPlay = () => {
+  targetVid.removeEventListener("play", handleFirstPlay);
+  const frameElement = window.frameElement;
+  frameElement && frameElement.classList.add("firstplay");
+}
+
 const syncSource = () => {
   if (targetVid.srcObject !== sourceVid.srcObject) {
     targetVid.srcObject = sourceVid.srcObject;
@@ -94,12 +100,15 @@ const setup = () => {
     }
   };
 
-  if (inIframe) {
-    document.documentElement.classList.add("iframe");
-  }
+
   targetVid = document.createElement("video");
   targetVid.muted = true;
   targetVid.autoplay = true;
+
+  if (inIframe) {
+    document.documentElement.classList.add("iframe");
+    targetVid.addEventListener("play", handleFirstPlay);
+  }
 
   update();
 

@@ -144,17 +144,12 @@ const update = () => {
       targetFrame = document.createElement("iframe");
       targetFrame.id = "video" + videoId;
 
-      // TODO: wait until video starts playing
-      targetFrame.onload = () => {
-        setTimeout(() => {
-          targetFrame.classList.add("show");
-        }, 500);
-        console.log("LOAD");
-        // console.log(targetFrame.contentWindow.document, targetFrame.contentWindow.document.innerHTML);
-      };
+      // Wait until video starts playing,
+      // video.js will add class "firstplay" to the targetFrame
+      // when the video starts playing for the first time.
+      // We'll fade in the iframe when this class is added.
 
       targetFrame.src = jitsipop.getVideoDocUrlForIframe(videoId);
-
       targetFrame.style.width = iframeWidth + "px";
       targetFrame.style.height = iframeHeight + "px";
       // Prepend so it will appear from underneath all the other frames
@@ -177,8 +172,8 @@ const update = () => {
         } else {
           // Fade out first, then remove
           targetFrame.addEventListener("transitionend", transitionEndHandler);
-          if (targetFrame.classList.contains("show")) {
-            targetFrame.classList.replace("show", "remove");
+          if (targetFrame.classList.contains("firstplay")) {
+            targetFrame.classList.replace("firstplay", "remove");
           } else {
             targetFrame.classList.add("remove");
           }
