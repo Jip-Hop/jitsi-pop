@@ -1,7 +1,3 @@
-// TODO: add full screen button when not in iframe
-// TODO: Make an option to resize the pop-out window to its native video size: https://www.w3schools.com/jsref/met_win_resizeto.asp
-// TODO: apply object fit cover when in multiview to work around rounding errors...? Black lines appear between videos.
-
 const inIframe = self !== top;
 const inPopup = window.opener !== null && window.opener !== window;
 
