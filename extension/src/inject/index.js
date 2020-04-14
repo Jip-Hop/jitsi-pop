@@ -195,7 +195,10 @@ const addOrDeleteVideo = (videoId, win, type, action) => {
 };
 
 const closeAllWindows = () => {
-  // TODO: also close multiview window in the future
+  if (jitsipop.multiviewWindow && !jitsipop.multiviewWindow.closed) {
+    jitsipop.multiviewWindow.close();
+  }
+
   for (let item of database.values()) {
     if (item.windows) {
       for (let win of item.windows) {
