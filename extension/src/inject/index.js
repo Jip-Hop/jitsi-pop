@@ -121,12 +121,6 @@ const getSidebarVideoWrapperByParticipantId = (participantId) => {
 };
 
 const addOrDeleteVideo = (videoId, win, type, action) => {
-  console.log("addOrDeleteVideo", videoId, win, type, action);
-  console.log(
-    "addOrDeleteVideo multiviewSelection",
-    new Set(multiviewSelection)
-  );
-
   const failMessage = () => {
     console.trace(`Couldn't ${action} ${type} for videoId`, videoId, item);
   };
@@ -159,34 +153,14 @@ const addOrDeleteVideo = (videoId, win, type, action) => {
   }
 
   if (item.participantId) {
-    console.log(
-      "addOrDeleteVideo",
-      multiviewSelection.has(videoId),
-      item.windows,
-      item.windows && item.windows.size
-    );
     if (
       !multiviewSelection.has(videoId) &&
       (!item.windows || !item.windows.size)
     ) {
-      console.log(
-        "addOrDeleteVideo item.windows",
-        new Set(item.windows),
-        "participantId",
-        item.participantId,
-        "DONT receiveHighRes"
-      );
       // Video is no longer open in multiview or pop-out window,
       // stop receiving high resolution video
       receiveHighRes(item.participantId, false);
     } else {
-      console.log(
-        "addOrDeleteVideo item.windows",
-        new Set(item.windows),
-        "participantId",
-        item.participantId,
-        "DO receiveHighRes"
-      );
       // Video is still in multiview or pop-out window,
       // receive high resolution video
       receiveHighRes(item.participantId, true);
@@ -194,7 +168,11 @@ const addOrDeleteVideo = (videoId, win, type, action) => {
   }
 };
 
-const closeAllWindows = () => {
+const unloadHandler = () => {
+  if (api) {
+    api.dispose();
+  }
+
   if (jitsipop.multiviewWindow && !jitsipop.multiviewWindow.closed) {
     jitsipop.multiviewWindow.close();
   }
@@ -444,6 +422,40 @@ const applyNewOrder = (videoId, newOrder) => {
   }
 };
 
+const displayNameWarning = (id, displayName) => {
+  var message;
+  if (!displayName) {
+    message = "Please choose a name that nobody is using in this room.";
+  } else if (
+    displayName === options.interfaceConfigOverwrite.DEFAULT_REMOTE_DISPLAY_NAME
+  ) {
+    message = `Please choose a name that nobody is using in this room, but don't use "${options.interfaceConfigOverwrite.DEFAULT_REMOTE_DISPLAY_NAME}".`;
+  } else {
+    var nameIsDuplicate = false;
+
+    for (var [key, value] of Object.entries(api._participants)) {
+      if (key === id) {
+        continue;
+      }
+      if (value.displayName === displayName) {
+        nameIsDuplicate = true;
+        break;
+      }
+    }
+
+    if (nameIsDuplicate) {
+      message = `Everyone in the room needs to have a unique nickname. Could you please pick one that's not in use already?`;
+    } else {
+      return;
+    }
+  }
+
+  // TODO: when multiple users have this extension installed, messages will come multiple times.
+  // So negotiate which one will be the 'moderator' and who will send these messages.
+
+  bc.postMessage({ displayNameWarning: { id: id, message: message } });
+};
+
 const videoOnlineHandler = (participantId) => {
   const participant = api._participants[participantId];
 
@@ -581,6 +593,16 @@ const videoOfflineHandler = (participantId) => {
   item.online = false;
 };
 
+const suspendOrKickedHandler = () => {
+  document.documentElement.classList.add("disconnected");
+  videoOfflineHandler(myUserID);
+
+  // Make status icon show orange
+  tryRuntimeSendMessage({
+    type: "videoConferenceConnecting",
+  });
+};
+
 const moveSelectedWrapper = (destination) => {
   const item = getItem(selectedVideoId);
   if (!item) {
@@ -629,16 +651,15 @@ const setupContextbar = () => {
   });
 };
 
-const setup = () => {
-  setupContextbar();
+const connect = () => {
+  document.documentElement.classList.remove("disconnected");
 
-  const urlParams = new URLSearchParams(
-    "?" + location.hash.substring(2).replace(/\//g, "&")
-  );
-  options.parentNode = document.querySelector("#meet");
-  options.roomName = urlParams.get("roomName");
-
+  if (api) {
+    const iframe = api.getIFrame();
+    iframe && iframe.remove();
+  }
   api = new JitsiMeetExternalAPI(window.location.hostname, options);
+  jitsipop.api = api;
 
   api.executeCommand("subject", " ");
 
@@ -649,18 +670,17 @@ const setup = () => {
     }
   });
 
-  api.addEventListener("suspendDetected", () => {
+  api.addEventListener("suspendDetected", suspendOrKickedHandler);
 
-    videoOfflineHandler(myUserID);
-
-    // Make status icon show orange
-    tryRuntimeSendMessage({
-      type: "videoConferenceConnecting",
-    });
+  api.addEventListener("participantKickedOut", (e) => {
+    if (e.kicked.local) {
+      suspendOrKickedHandler();
+    }
   });
 
   api.addEventListener("videoConferenceLeft", () => {
 
+    document.documentElement.classList.add("disconnected");
     videoOfflineHandler(myUserID);
 
     tryRuntimeSendMessage({
@@ -672,6 +692,10 @@ const setup = () => {
   });
 
   api.addEventListener("videoConferenceJoined", (e) => {
+    // When clicking the 'rejoin' button (not from this extension, but part of Jitsi Meet)
+    // after a suspend, the connect() function isn't called again, so remove class here too.
+    document.documentElement.classList.remove("disconnected");
+
     const newUserID = e.id;
     const newDisplayName = e.displayName;
 
@@ -701,41 +725,6 @@ const setup = () => {
       toggleFilmStrip: [],
     });
   });
-
-  const displayNameWarning = (id, displayName) => {
-    var message;
-    if (!displayName) {
-      message = "Please choose a name that nobody is using in this room.";
-    } else if (
-      displayName ===
-      options.interfaceConfigOverwrite.DEFAULT_REMOTE_DISPLAY_NAME
-    ) {
-      message = `Please choose a name that nobody is using in this room, but don't use "${options.interfaceConfigOverwrite.DEFAULT_REMOTE_DISPLAY_NAME}".`;
-    } else {
-      var nameIsDuplicate = false;
-
-      for (var [key, value] of Object.entries(api._participants)) {
-        if (key === id) {
-          continue;
-        }
-        if (value.displayName === displayName) {
-          nameIsDuplicate = true;
-          break;
-        }
-      }
-
-      if (nameIsDuplicate) {
-        message = `Everyone in the room needs to have a unique nickname. Could you please pick one that's not in use already?`;
-      } else {
-        return;
-      }
-    }
-
-    // TODO: when multiple users have this extension installed, messages will come multiple times.
-    // So negotiate which one will be the 'moderator' and who will send these messages.
-
-    bc.postMessage({ displayNameWarning: { id: id, message: message } });
-  };
 
   api.addEventListener("displayNameChange", (e) => {
     const displayName = e.displayname;
@@ -802,6 +791,23 @@ const setup = () => {
       updateContextbar();
     }
   });
+};
+
+const setup = () => {
+  setupContextbar();
+
+  const urlParams = new URLSearchParams(
+    "?" + location.hash.substring(2).replace(/\//g, "&")
+  );
+  options.parentNode = document.querySelector("#meet");
+  options.roomName = urlParams.get("roomName");
+
+  document.getElementById("reconnect").onclick = (e) => {
+    e.preventDefault();
+    connect();
+  };
+
+  connect();
 
   window.onbeforeunload = (e) => {
     // Ask for confirmation
@@ -814,11 +820,12 @@ const setup = () => {
   // So would have to somehow have the pop-out reconnect.
   // But we don't want the pop-outs to stay open when this window
   // actually closes.
-  window.addEventListener("unload", closeAllWindows);
+  window.addEventListener("unload", unloadHandler);
 };
 
 // Expose API
 window.jitsipop = jitsipop;
+jitsipop.api = api;
 jitsipop.database = database;
 jitsipop.mainWindow = window;
 jitsipop.multiviewSelection = multiviewSelection;
