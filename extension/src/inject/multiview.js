@@ -2,6 +2,7 @@
 const jitsipop = (window.jitsipop = window.opener.jitsipop);
 const mainWindow = jitsipop.mainWindow;
 var currentSelection = new Set();
+var resizeTimer;
 
 // TODO: read these sizes from jitsiConfig.js, so they stay consistent
 const iframeWidth = 1280;
@@ -41,7 +42,9 @@ const reflow = () => {
   iframes.forEach((iframe) => {
     iframe.style.transform = `translate3d(${
       c * result.itemWidth + xCenterCompensation
-    }px, ${r * result.itemHeight + yCenterCompensation}px, 0) scale(${result.itemWidth/iframeWidth})`;
+    }px, ${r * result.itemHeight + yCenterCompensation}px, 0) scale(${
+      result.itemWidth / iframeWidth
+    })`;
 
     c++;
 
@@ -191,7 +194,7 @@ const setup = () => {
       // even after multiview is closed.
       jitsipop.multiviewSelection.clear();
     }
-  }
+  };
 
   window.onunload = () => {
     // Remove this window from the array of open pop-outs in the main window
@@ -206,8 +209,13 @@ const setup = () => {
     jitsipop.multiviewWindow = window;
   }
 
-  // TODO: debounce resize
-  window.addEventListener("resize", reflow);
+  // Debounce resize
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      reflow();
+    }, 50);
+  });
 
   update();
 
