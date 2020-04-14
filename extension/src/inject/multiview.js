@@ -3,6 +3,7 @@ const jitsipop = (window.jitsipop = window.opener.jitsipop);
 const mainWindow = jitsipop.mainWindow;
 var currentSelection = new Set();
 
+// TODO: read these sizes from jitsiConfig.js, so they stay consistent
 const iframeWidth = 1280;
 const iframeHeight = 720;
 
@@ -25,8 +26,8 @@ const reflow = () => {
     iframes.length,
     viewportWidth,
     viewportHeight,
-    16,
-    9
+    iframeWidth,
+    iframeHeight
   );
 
   const gridWidth = result.ncols * result.itemWidth;
@@ -38,21 +39,6 @@ const reflow = () => {
     c = 0;
 
   iframes.forEach((iframe) => {
-    // iframe.style.width = Math.ceil(result.itemWidth); // round up to prevent black lines caused by non-whole pixels
-    // iframe.style.height = Math.ceil(result.itemHeight);
-
-    // iframe.style.width = "480px";
-    // iframe.style.height = "270px";
-    
-
-    // if (viewportWidth / viewportHeight > 16 / 9) {
-    //   iframe.style.width = viewportWidth;
-    //   iframe.style.height = (viewportWidth * 9) / 16;
-    // } else {
-    //   iframe.style.width = (viewportHeight * 16) / 9;
-    //   iframe.style.height = viewportHeight;
-    // }
-
     iframe.style.transform = `translate3d(${
       c * result.itemWidth + xCenterCompensation
     }px, ${r * result.itemHeight + yCenterCompensation}px, 0) scale(${result.itemWidth/iframeWidth})`;
@@ -196,22 +182,27 @@ const setup = () => {
   // Allow calling these objects from mainWindow
   window.update = update;
 
+  window.onbeforeunload = () => {
+    if (mainWindow && !mainWindow.closed) {
+      // Reset to no selected videos for multiview.
+      // Do it in onbeforeunload, so the selection is already cleared
+      // when the iframes in this window unload and call jitsipop.addOrDeleteVideo().
+      // Otherwise we'll continue to receive high resolution for these videos,
+      // even after multiview is closed.
+      jitsipop.multiviewSelection.clear();
+    }
+  }
+
   window.onunload = () => {
     // Remove this window from the array of open pop-outs in the main window
     if (mainWindow && !mainWindow.closed) {
-      // jitsipop.multiviewClosedHandler();
       jitsipop.multiviewWindow = null;
     }
-
-    // TODO: needs a counter somewhere, because if it's open in multiview (not implemented yet),
-    // and open in a pop-out window, it needs to still receive high res if only one of them is closed
-    // jitsipop.receiveHighRes(participantId, false);
   };
 
   setInterval(parentPoller, 1000);
 
   if (mainWindow && !mainWindow.closed) {
-    // jitsipop.windows.push(window);
     jitsipop.multiviewWindow = window;
   }
 
@@ -219,10 +210,6 @@ const setup = () => {
   window.addEventListener("resize", reflow);
 
   update();
-
-  // tryRuntimeSendMessage({
-  //   type: "multiviewWinLoad",
-  // });
 
   document.documentElement.addEventListener("keyup", (event) => {
     // Number 13 is the "Enter" key on the keyboard,

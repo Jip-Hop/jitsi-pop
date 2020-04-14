@@ -37,6 +37,7 @@ window.addEventListener("load", event => {
   const getIdsToApply = () => {
     // Make a new set without reference
     const idsToApply = new Set(selectedParticipants);
+    console.log("addOrDeleteVideo idsToApply", idsToApply, APP.conference._room.rtc._selectedEndpoints);
     try {
       // Always select the large video
       const largeVideo = APP.UI.getLargeVideo();

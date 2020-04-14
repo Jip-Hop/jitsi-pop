@@ -119,41 +119,110 @@ const getSidebarVideoWrapperByParticipantId = (participantId) => {
     );
   }
 };
-const addIframe = (videoId, iframe) => {
-  const item = getItem(videoId);
-  if (item && item.iframes) {
-    item.iframes.add(iframe);
+
+const addOrDeleteVideo = (videoId, win, type, action) => {
+  console.log("addOrDeleteVideo", videoId, win, type, action);
+  console.log("addOrDeleteVideo multiviewSelection", new Set(multiviewSelection));
+  
+  const failMessage = () => {
+    console.trace(`Couldn't ${action} ${type} for videoId`, videoId, item);
+  };
+
+  var key;
+  if (type === "window") {
+    key = "windows";
+  } else if (type === "iframe") {
+    key = "iframes";
   } else {
-    console.trace("Couldn't add iframe for videoId", videoId, item);
+    // Invalid type
+    failMessage();
+    return;
+  }
+
+  const item = getItem(videoId);
+  if (!item) {
+    failMessage();
+    return;
+  }
+
+  if (action === "add") {
+    item[key] && item[key].add(win);
+  } else if (action === "delete") {
+    item[key] && item[key].delete(win);
+  } else {
+    // Invalid action
+    failMessage();
+    return;
+  }
+
+  if (item.participantId) {
+    console.log("addOrDeleteVideo", multiviewSelection.has(videoId), item.windows, item.windows && item.windows.size);
+    if (
+      !multiviewSelection.has(videoId) &&
+      (!item.windows || !item.windows.size)
+    ) {
+      console.log("addOrDeleteVideo item.windows", new Set(item.windows), "participantId", item.participantId, "DONT receiveHighRes");
+      // Video is no longer open in multiview or pop-out window,
+      // stop receiving high resolution video
+      receiveHighRes(item.participantId, false);
+    } else {
+      console.log("addOrDeleteVideo item.windows", new Set(item.windows), "participantId", item.participantId, "DO receiveHighRes");
+      // Video is still in multiview or pop-out window,
+      // receive high resolution video
+      receiveHighRes(item.participantId, true);
+    }
   }
 };
 
-const removeIframe = (videoId, iframe) => {
-  const item = getItem(videoId);
-  if (item && item.iframes && item.iframes.has(iframe)) {
-    item.iframes.delete(iframe);
-  } else {
-    console.trace("Couldn't delete iframe for videoId", videoId, item);
-  }
-};
+// const addIframe = (videoId, win) => {
+//   addOrDeleteVideo(videoId, win, "iframe", "add");
+// };
 
-const addWindow = (videoId, window) => {
-  const item = getItem(videoId);
-  if (item && item.windows) {
-    item.windows.add(window);
-  } else {
-    console.trace("Couldn't add window for videoId", videoId, item);
-  }
-};
+// const deleteIframe = (videoId, win) => {
+//   addOrDeleteVideo(videoId, win, "iframe", "delete");
+// };
 
-const removeWindow = (videoId, window) => {
-  const item = getItem(videoId);
-  if (item && item.windows && item.windows.has(window)) {
-    item.windows.delete(window);
-  } else {
-    console.trace("Couldn't delete window for videoId", videoId, item);
-  }
-};
+// const addWindow = (videoId, win) => {
+//   addOrDeleteVideo(videoId, win, "window", "add");
+// };
+
+// const deleteWindow = (videoId, win) => {
+//   addOrDeleteVideo(videoId, win, "window", "delete");
+// };
+
+// const deleteIframe = (videoId, iframe) => {
+//   const item = getItem(videoId);
+//   if (item) {
+//     if (!multiviewSelection.has(videoId)) {
+//       if (item.participantId) {
+//         receiveHighRes(item.participantId, false);
+//       }
+//     }
+//     if (item.iframes && item.iframes.has(iframe)) {
+//       item.iframes.delete(iframe);
+//     }
+//   } else {
+//     console.trace("Couldn't delete iframe for videoId", videoId, item);
+//   }
+// };
+
+// const addWindow = (videoId, window) => {
+//   const item = getItem(videoId);
+//   if (item && item.windows) {
+//     item.windows.add(window);
+//   } else {
+//     console.trace("Couldn't add window for videoId", videoId, item);
+//   }
+// };
+
+// const deleteWindow = (videoId, window) => {
+//   const item = getItem(videoId);
+//   if (item && item.windows && item.windows.has(window)) {
+//     item.windows.delete(window);
+//   } else {
+//     console.trace("Couldn't delete window for videoId", videoId, item);
+//   }
+// };
 
 const closeAllWindows = () => {
   // TODO: also close multiview window in the future
@@ -242,6 +311,7 @@ const makeMultiviewWindow = (videoId) => {
     changeWindowOffset();
   }
 
+  // Toggle multiview selection
   if (multiviewSelection.has(videoId)) {
     multiviewSelection.delete(videoId);
   } else {
@@ -745,11 +815,12 @@ jitsipop.multiviewSelection = multiviewSelection;
 jitsipop.getFormattedDisplayName = getFormattedDisplayName;
 jitsipop.getParticipantId = getParticipantId;
 jitsipop.getParticipantVideo = getParticipantVideo;
-jitsipop.receiveHighRes = receiveHighRes;
-jitsipop.addIframe = addIframe;
-jitsipop.removeIframe = removeIframe;
-jitsipop.addWindow = addWindow;
-jitsipop.removeWindow = removeWindow;
+// jitsipop.receiveHighRes = receiveHighRes;
+// jitsipop.addIframe = addIframe;
+// jitsipop.deleteIframe = deleteIframe;
+// jitsipop.addWindow = addWindow;
+// jitsipop.deleteWindow = deleteWindow;
+jitsipop.addOrDeleteVideo = addOrDeleteVideo;
 jitsipop.getVideoDocUrlForIframe = getVideoDocUrlForIframe;
 jitsipop.getItemOrder = getItemOrder;
 
