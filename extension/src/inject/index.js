@@ -152,11 +152,26 @@ const addOrDeleteVideo = (videoId, win, type, action) => {
     return;
   }
 
+  const videoInMultiview = multiviewSelection.has(videoId);
+  const videoInPopout = item.windows && item.windows.size;
+
+  const sidebarVideoWrapper = item.sidebarVideoWrapper;
+  if(sidebarVideoWrapper) {
+    if(videoInMultiview){
+      sidebarVideoWrapper.classList.add("multiview");
+    } else {
+      sidebarVideoWrapper.classList.remove("multiview");
+    }
+
+    if(videoInPopout){
+      sidebarVideoWrapper.classList.add("popout");
+    } else {
+      sidebarVideoWrapper.classList.remove("popout");
+    }
+  }
+
   if (item.participantId) {
-    if (
-      !multiviewSelection.has(videoId) &&
-      (!item.windows || !item.windows.size)
-    ) {
+    if (!videoInMultiview && !videoInPopout) {
       // Video is no longer open in multiview or pop-out window,
       // stop receiving high resolution video
       receiveHighRes(item.participantId, false);
@@ -517,6 +532,8 @@ const videoOnlineHandler = (participantId) => {
   // Make new video wrapper
   if (!sidebarVideoWrapper) {
     sidebarVideoWrapper = document.createElement("div");
+    sidebarVideoWrapper.innerHTML =
+      '<i class="far fa-window-restore"></i><i class="fas fa-th-large"></i>';
     sidebarVideoWrapper.classList.add("video-wrapper");
     videoId = videoIdCounter++;
 
@@ -679,7 +696,6 @@ const connect = () => {
   });
 
   api.addEventListener("videoConferenceLeft", () => {
-
     document.documentElement.classList.add("disconnected");
     videoOfflineHandler(myUserID);
 

@@ -44,6 +44,28 @@
         cursor: pointer;
       }
 
+      #sidebar > .video-wrapper > i {
+        position: absolute;
+        right: 0;
+        width: 25px;
+        height: 25px;
+        text-align: center;
+        color: #ff991f;
+        line-height: 25px;
+        top: 0;
+        font-size: 10px;
+      }
+
+      #sidebar > .video-wrapper > i.fa-th-large {
+        top: unset;
+        bottom: 0;
+      }
+
+      #sidebar > .video-wrapper:not(.popout) > i.fa-window-restore,
+      #sidebar > .video-wrapper:not(.multiview) > i.fa-th-large {
+        display: none;
+      }
+
       #sidebar > .video-wrapper:after {
         content: "";
         display: flex;
@@ -57,6 +79,8 @@
         color: white;
         box-sizing: border-box;
         text-align: center;
+        background-color: rgba(0, 0, 0, 0);
+        transition: background-color 0.25s ease;
       }
 
       #sidebar > .video-wrapper:hover:after,
@@ -102,15 +126,26 @@
         text-align: center;
       }
 
-      #contextbar > button,
-      #reconnect {
+      button {
         background: #4c9aff;
         color: #1b2638;
         border-radius: 3px;
         padding: 0 10px;
-        margin: 5px 10px;
-        box-sizing: border-box;
         line-height: 3em;
+        box-sizing: border-box;
+      }
+
+      button:not(:disabled):hover {
+        background: #b3d4ff;
+        cursor: pointer;
+      }
+
+      button:disabled {
+        background: gray;
+      }
+
+      #contextbar > button {
+        margin: 0 10px 5px 10px;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -122,28 +157,11 @@
         width: 20px;
       }
 
-      #contextbar > button:first-of-type {
-        margin-top: 0;
-      }
-
-      #contextbar > button:first-of-type {
-        margin-top: 0;
-      }
-
-      #contextbar > button:not(:disabled):hover,
-      #reconnect:not(:disabled):hover {
-        background: #b3d4ff;
-        cursor: pointer;
-      }
-
-      #contextbar > button:disabled {
-        background: gray;
-      }
-
       #meet {
         height: 100%;
         flex: auto;
         position: relative;
+        overflow: hidden;
       }
 
       #reconnect-wrapper {
@@ -163,10 +181,21 @@
         position: absolute;
         left: 50%;
         top: 50%;
-        transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%) scale(0.75);
         display: none;
         pointer-events: all;
         font-size: 1.5em;
+        width: 150px;
+        height: 150px;
+        border-radius: 150px;
+        background: #41d873;
+        color: white;
+        padding: 0;
+        transition: all 0.25s ease;
+      }
+
+      #reconnect:hover {
+        transform: translate(-50%, -50%) scale(1);
       }
 
       html.disconnected #reconnect {
