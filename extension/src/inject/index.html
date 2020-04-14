@@ -107,9 +107,19 @@
         background: #4c9aff;
         color: #1b2638;
         border-radius: 3px;
-        padding: 10px;
+        padding: 0 10px;
         margin: 5px 10px;
         box-sizing: border-box;
+        line-height: 3em;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      #contextbar > button > .fas,
+      #contextbar > button > .far {
+        font-size: 1.5em;
+        width: 20px;
       }
 
       #contextbar > button:first-of-type {
@@ -168,19 +178,27 @@
   <body>
     <div id="contextbar">
       <h4></h4>
-      <button class="pop-out-button">Pop-out</button>
-      <button class="multiview-button">Multiview toggle</button>
-      <button class="move-button" data-destination="move-top">
-        Move to top
+      <button class="pop-out-button">
+        Pop-out <i class="far fa-window-restore"></i>
       </button>
-      <button class="move-button" data-destination="move-up">Move up</button>
+      <button class="multiview-button">
+        Multiview toggle <i class="fas fa-th-large"></i>
+      </button>
+      <button class="move-button" data-destination="move-top">
+        Move to top <i class="fas fa-angle-double-up"></i>
+      </button>
+      <button class="move-button" data-destination="move-up">
+        Move up <i class="fas fa-angle-up"></i>
+      </button>
       <button class="move-button" data-destination="move-down">
-        Move down
+        Move down <i class="fas fa-angle-down"></i>
       </button>
       <button class="move-button" data-destination="move-bottom">
-        Move to bottom
+        Move to bottom <i class="fas fa-angle-double-down"></i>
       </button>
-      <button class="delete-video">Delete</button>
+      <button class="delete-video">
+        Delete <i class="fas fa-user-minus"></i>
+      </button>
     </div>
     <div id="sidebar"></div>
     <div id="meet">

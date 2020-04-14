@@ -17,6 +17,19 @@ const tryRuntimeSendMessage = (message, callback) => {
   }
 };
 
+function LoadCSS(cssURL) {
+  return new Promise(function (resolve) {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = cssURL;
+    document.head.appendChild(link);
+
+    link.onload = function () {
+      resolve();
+    };
+  });
+}
+
 const loadMain = async () => {
   const html = await fetch(
     chrome.runtime.getURL("src/inject/index.html")
@@ -24,10 +37,20 @@ const loadMain = async () => {
   // Replace page contents with custom HTML
   document.documentElement.innerHTML = html;
 
-  // Import Jitsi Meet external API and custom script
-  import(`https://${window.location.hostname}/external_api.js`).then(() => {
-    import(chrome.runtime.getURL("src/inject/index.js"));
-  });
+  LoadCSS(chrome.runtime.getURL("libs/fontawesome-free/css/fontawesome.min.css"))
+  .then(
+    LoadCSS(chrome.runtime.getURL("libs/fontawesome-free/css/regular.css"))
+    .then(
+      LoadCSS(chrome.runtime.getURL("libs/fontawesome-free/css/solid.css"))
+    )
+    .then(() => {
+      // Import Jitsi Meet external API and custom script
+      import(`https://${window.location.hostname}/external_api.js`).then(() => {
+        import(chrome.runtime.getURL("src/inject/index.js"));
+      });
+    })
+  )
+  
 
   // There's no event to catch Extension unloading,
   // onbeforeunload etc. on the background page doesn't work.
