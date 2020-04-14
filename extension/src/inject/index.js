@@ -810,6 +810,10 @@ const connect = () => {
 };
 
 const setup = () => {
+
+  // TODO: setup menubar, for sound settings etc.
+  // APP.conference._room.muteParticipant(participantId)
+
   setupContextbar();
 
   const urlParams = new URLSearchParams(
