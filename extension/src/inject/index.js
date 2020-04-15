@@ -746,6 +746,7 @@ const connect = () => {
     const displayName = e.displayname;
     const participantId = e.id;
     const item = getItemByParticipantId(participantId);
+
     if (item) {
       item.displayName = displayName;
 
@@ -788,7 +789,7 @@ const connect = () => {
       );
     }
 
-    if (item.videoId === selectedVideoId) {
+    if (item && item.videoId === selectedVideoId) {
       updateContextbar();
     }
   });
@@ -810,6 +811,9 @@ const connect = () => {
 };
 
 const setup = () => {
+  // Unhide body now that all resources are loaded, to prevent unstyled content flash
+  document.body.style.display = "";
+
   // TODO: setup menubar, for sound settings etc.
   const settingsButtons = document.querySelectorAll("#tabs button");
   var selectedSetting, selectedSettingsContent;
@@ -827,7 +831,8 @@ const setup = () => {
         document.documentElement.classList.add("settings-open");
       }
 
-      selectedSettingsContent && selectedSettingsContent.classList.remove("active")
+      selectedSettingsContent &&
+        selectedSettingsContent.classList.remove("active");
       settingsContent && settingsContent.classList.add("active");
       selectedSettingsContent = settingsContent;
     };
