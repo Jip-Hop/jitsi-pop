@@ -38,19 +38,15 @@ const loadMain = async () => {
   document.documentElement.innerHTML = html;
 
   // Import CSS
-  LoadCSS(chrome.runtime.getURL("libs/bootstrap/css/bootstrap.min.css"))
-    .then(
-      LoadCSS(
-        chrome.runtime.getURL("libs/fontawesome-free/css/fontawesome.min.css")
-      )
-    )
-    .then(
-      LoadCSS(chrome.runtime.getURL("libs/fontawesome-free/css/regular.css"))
-    )
-    .then(LoadCSS(chrome.runtime.getURL("libs/fontawesome-free/css/solid.css")))
-    // Import Jitsi Meet external API and custom script
-    .then(import(`https://${window.location.hostname}/external_api.js`))
-    .then(import(chrome.runtime.getURL("src/inject/index.js")));
+  await LoadCSS(chrome.runtime.getURL("libs/bootstrap/css/bootstrap.min.css"));
+  await LoadCSS(
+    chrome.runtime.getURL("libs/fontawesome-free/css/fontawesome.min.css")
+  );
+  await LoadCSS(chrome.runtime.getURL("libs/fontawesome-free/css/regular.css"));
+  await LoadCSS(chrome.runtime.getURL("libs/fontawesome-free/css/solid.css"));
+  // Import Jitsi Meet external API and custom script
+  await import(`https://${window.location.hostname}/external_api.js`);
+  await import(chrome.runtime.getURL("src/inject/index.js"));
 
   // There's no event to catch Extension unloading,
   // onbeforeunload etc. on the background page doesn't work.
