@@ -20,6 +20,7 @@
         font-family: -apple-system, BlinkMacSystemFont, open_sanslight,
           "Helvetica Neue", Helvetica, Arial, sans-serif;
         background: #0e1624;
+        font-size: 14px;
       }
 
       body {
@@ -124,6 +125,7 @@
         margin: 20px 10px;
         color: #b8c7e0;
         text-align: center;
+        font-size: 16px;
       }
 
       button {
@@ -133,6 +135,7 @@
         padding: 0 10px;
         line-height: 3em;
         box-sizing: border-box;
+        font-size: 12px;
       }
 
       button:not(:disabled):hover {
@@ -145,7 +148,7 @@
       }
 
       #contextbar > button,
-      #menubar > button {
+      #tabs > button {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -157,13 +160,13 @@
 
       #contextbar > button > .fas,
       #contextbar > button > .far,
-      #menubar > button > .fas,
-      #menubar > button > .far {
+      #tabs > button > .fas,
+      #tabs > button > .far {
         font-size: 1.5em;
         width: 20px;
       }
 
-      #menubar > button {
+      #tabs > button {
         margin: 5px;
         background: transparent;
         color: #4c9aff;
@@ -172,11 +175,11 @@
         border-radius: 0;
       }
 
-      #menubar > button:first-of-type {
+      #tabs > button:first-of-type {
         margin-left: 0;
       }
 
-      #menubar > button:last-of-type {
+      #tabs > button:last-of-type {
         margin-right: 0;
       }
 
@@ -187,11 +190,24 @@
         border-bottom: 2px solid #b8c7e0;
         box-sizing: border-box;
         margin: 0 5px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        /* }
+
+      #menubar:hover { */
+        height: 50vh;
       }
 
-      #menubar:hover {
-        height: 50vh;
-        /* overflow-y: scroll; */
+      #settings {
+        color: #b8c7e0;
+        height: 100%;
+        overflow-x: hidden;
+        overflow-y: scroll;
+      }
+
+      #settings > * {
+        margin: 10px;
       }
 
       #main {
@@ -277,9 +293,44 @@
     <div id="sidebar"></div>
     <div id="main">
       <div id="menubar">
-        <button id="sound-settings-button">
-          Sound <i class="fas fa-volume-off"></i>
-        </button>
+        <div id="tabs">
+          <button id="sound-settings-button">
+            Sound <i class="fas fa-volume-off"></i>
+          </button>
+        </div>
+        <div id="settings">
+          <p>Select how to mute:</p>
+
+          <div>
+            <input type="radio" id="sound-manual" checked />
+            <label for="sound-manual"
+              >Manual mute (in Jitsi interface below)</label
+            >
+          </div>
+
+          <div>
+            <input type="radio" id="sound-auto" />
+            <label for="sound-auto"
+              >Auto mute all, except streams in pop-out
+              <i class="fas fa-th-large"></i> or multiview
+              <i class="far fa-window-restore"></i> window
+            </label>
+          </div>
+
+          <div>
+            <input type="radio" id="sound-all-off" />
+            <label for="sound-all-off"
+              >Mute all <i class="fas fa-volume-mute"></i
+            ></label>
+          </div>
+
+          <div>
+            <input type="radio" id="sound-all-on" />
+            <label for="sound-all-on"
+              >Mute none <i class="fas fa-volume-up"></i
+            ></label>
+          </div>
+        </div>
       </div>
       <div id="meet">
         <div id="reconnect-wrapper">
