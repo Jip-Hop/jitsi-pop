@@ -815,6 +815,7 @@ const setup = () => {
   document.body.style.display = "";
 
   // TODO: setup menubar, for sound settings etc.
+  // TODO: dynamically set max-height for #settings-bar based on content height of selected setting
   const settingsButtons = document.querySelectorAll("#tabs button");
   var selectedSetting, selectedSettingsContent;
   settingsButtons.forEach((button) => {

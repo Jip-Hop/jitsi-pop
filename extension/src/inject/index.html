@@ -325,9 +325,30 @@
           <button id="sound-settings">
             Sound <i class="fas fa-volume-off"></i>
           </button>
+          <button id="nickname-settings">
+            Nickname <i class="fas fa-user-circle"></i>
+          </button>
+          <button id="invite-link-settings">
+            Invite <i class="fas fa-share-square"></i>
+          </button>
         </nav>
         <div id="settings-drawer">
           <div id="settings">
+            <div class="pop-out-settings">
+              <button class="pop-out-button">
+                Bring to front <i class="fas fa-arrow-circle-up"></i>
+              </button>
+              <button class="pop-out-button">
+                Close all <i class="fas fa-window-close"></i>
+              </button>
+            </div>
+            <div class="multiview-settings">
+              <button class="multiview-button">
+                Show multiview <i class="fas fa-th-large"></i>
+              </button>
+              TODO: Make a radio to select layout: fit, fill, blend
+              TODO: Radio select for blend layout (but allow changing settings also in other modes) opacity OR blending mode (blending mode is itself a dropdown select box)
+            </div>
             <div class="sound-settings">
               <p>Select how to mute streams:</p>
 
@@ -399,6 +420,38 @@
                   </small>
                 </label>
               </div>
+            </div>
+            <div class="nickname-settings">
+              TODO: input field to change displayName, a warning when it's
+              invalid, a list of facts about the nickname. Dynamically insert
+              "nameless" with JavaScript.
+              <p>
+                With a proper nickname, your video will reliably show up in the
+                pop-out and multiview windows for the participants in this
+                conference room. Even when you leave and enter the room again.
+              </p>
+              <ul>
+                <li>
+                  Your nickname is used to uniquely identify your video within
+                  this conference room.
+                </li>
+                <li>
+                  Don't use a name that's already taken, it will cause
+                  conflicts.
+                </li>
+                <li>
+                  Use another name for each connection, if you connect to this
+                  room simultaneously using multiple devices or browser windows.
+                </li>
+                <li>
+                  Never use an empty nickname, or a nickname with only
+                  whitespace.
+                </li>
+                <li>Also don't use "nameless", it will cause conflicts too.</li>
+              </ul>
+            </div>
+            <div class="invite-link-settings">
+              Copy invite link.
             </div>
           </div>
         </div>
