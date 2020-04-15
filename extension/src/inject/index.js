@@ -156,14 +156,14 @@ const addOrDeleteVideo = (videoId, win, type, action) => {
   const videoInPopout = item.windows && item.windows.size;
 
   const sidebarVideoWrapper = item.sidebarVideoWrapper;
-  if(sidebarVideoWrapper) {
-    if(videoInMultiview){
+  if (sidebarVideoWrapper) {
+    if (videoInMultiview) {
       sidebarVideoWrapper.classList.add("multiview");
     } else {
       sidebarVideoWrapper.classList.remove("multiview");
     }
 
-    if(videoInPopout){
+    if (videoInPopout) {
       sidebarVideoWrapper.classList.add("popout");
     } else {
       sidebarVideoWrapper.classList.remove("popout");
@@ -810,8 +810,28 @@ const connect = () => {
 };
 
 const setup = () => {
-
   // TODO: setup menubar, for sound settings etc.
+  const settingsButtons = document.querySelectorAll("#tabs button");
+  var selectedSetting, selectedSettingsContent;
+  settingsButtons.forEach((button) => {
+    const settingsContent = document.querySelector(`#settings .${button.id}`);
+    button.onclick = (e) => {
+      if (selectedSetting === button) {
+        selectedSetting.classList.remove("active");
+        selectedSetting = null;
+        document.documentElement.classList.remove("settings-open");
+      } else {
+        selectedSetting && selectedSetting.classList.remove("active");
+        selectedSetting = button;
+        selectedSetting.classList.add("active");
+        document.documentElement.classList.add("settings-open");
+      }
+
+      selectedSettingsContent && selectedSettingsContent.classList.remove("active")
+      settingsContent && settingsContent.classList.add("active");
+      selectedSettingsContent = settingsContent;
+    };
+  });
   // APP.conference._room.muteParticipant(participantId)
 
   setupContextbar();

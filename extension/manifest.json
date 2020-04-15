@@ -29,7 +29,8 @@
     "libs/fontawesome-free/css/regular.css",
     "libs/fontawesome-free/css/solid.css",
     "libs/fontawesome-free/webfonts/fa-solid-900.woff2",
-    "libs/fontawesome-free/webfonts/fa-regular-400.woff2"
+    "libs/fontawesome-free/webfonts/fa-regular-400.woff2",
+    "libs/bootstrap/css/bootstrap.min.css"
   ],
   "content_scripts": [
     {

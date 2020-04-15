@@ -37,20 +37,20 @@ const loadMain = async () => {
   // Replace page contents with custom HTML
   document.documentElement.innerHTML = html;
 
-  LoadCSS(chrome.runtime.getURL("libs/fontawesome-free/css/fontawesome.min.css"))
-  .then(
-    LoadCSS(chrome.runtime.getURL("libs/fontawesome-free/css/regular.css"))
+  // Import CSS
+  LoadCSS(chrome.runtime.getURL("libs/bootstrap/css/bootstrap.min.css"))
     .then(
-      LoadCSS(chrome.runtime.getURL("libs/fontawesome-free/css/solid.css"))
+      LoadCSS(
+        chrome.runtime.getURL("libs/fontawesome-free/css/fontawesome.min.css")
+      )
     )
-    .then(() => {
-      // Import Jitsi Meet external API and custom script
-      import(`https://${window.location.hostname}/external_api.js`).then(() => {
-        import(chrome.runtime.getURL("src/inject/index.js"));
-      });
-    })
-  )
-  
+    .then(
+      LoadCSS(chrome.runtime.getURL("libs/fontawesome-free/css/regular.css"))
+    )
+    .then(LoadCSS(chrome.runtime.getURL("libs/fontawesome-free/css/solid.css")))
+    // Import Jitsi Meet external API and custom script
+    .then(import(`https://${window.location.hostname}/external_api.js`))
+    .then(import(chrome.runtime.getURL("src/inject/index.js")));
 
   // There's no event to catch Extension unloading,
   // onbeforeunload etc. on the background page doesn't work.
