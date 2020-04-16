@@ -109,6 +109,8 @@ const removeOfflineItem = (videoId) => {
 
     database.delete(videoId);
 
+    // TODO: also remove this video from the multiview
+
     // TODO: select the video above the one we just removed,
     // and keep context bar open.
     // Or close if there are no video's left.
@@ -880,6 +882,8 @@ const setup = () => {
   document.body.style.display = "";
 
   document.getElementById("focus-multiview").onclick = showMultiview;
+  // TODO: disable addAllInMultiview and removeAllFromMultiview when multiview is closed,
+  // or when either of the two won't have any effect (already all removed or added)
   document.getElementById("add-all-multiview").onclick = addAllInMultiview;
   document.getElementById(
     "remove-all-multiview"
