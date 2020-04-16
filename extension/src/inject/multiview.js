@@ -21,6 +21,17 @@ const reflow = () => {
     return a.dataset.order - b.dataset.order;
   });
 
+  if (jitsipop.multiviewLayout === "layout-stack") {
+    iframes.forEach((iframe) => {
+      iframe.style.transform = `translate3d(-50%, -50%, 0) scale(1)`;
+      iframe.style.width = "100vw";
+      iframe.style.height = "100vh";
+      iframe.style.mixBlendMode = "screen";
+    });
+
+    return;
+  }
+
   const viewportWidth = getViewportWidth();
   const viewportHeight = getViewportHeight();
   const result = fitToContainer(
@@ -40,6 +51,11 @@ const reflow = () => {
     c = 0;
 
   iframes.forEach((iframe) => {
+
+    iframe.style.width = iframeWidth + "px";
+    iframe.style.height = iframeHeight + "px";
+    iframe.style.mixBlendMode = "";
+
     iframe.style.transform = `translate3d(${
       c * result.itemWidth + xCenterCompensation
     }px, ${r * result.itemHeight + yCenterCompensation}px, 0) scale(${
@@ -189,6 +205,7 @@ const update = () => {
 const setup = () => {
   // Allow calling these objects from mainWindow
   window.update = update;
+  window.reflow = reflow;
 
   window.onbeforeunload = () => {
     if (mainWindow && !mainWindow.closed) {

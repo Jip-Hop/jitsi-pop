@@ -10,7 +10,11 @@ style.sheet.insertRule(
   "body, .tOoji, #largeVideoContainer, .tile-view #largeVideoContainer {background: transparent !important; background-color: transparent !important;}"
 );
 
-window.addEventListener("load", event => {
+window.addEventListener("load", (event) => {
+  // Fade in this frame
+  const frameElement = window.frameElement;
+  frameElement && (frameElement.style.opacity = 1);
+
   var selectedParticipants = new Set();
   const bc = new BroadcastChannel("popout_jitsi_channel");
   // TODO: maxVideoHeightToReceive could be based on the resolution
@@ -110,7 +114,7 @@ window.addEventListener("load", event => {
     patchMethods();
     JitsiMeetJS.setLogLevel(JitsiMeetJS.logLevels.ERROR);
 
-    bc.onmessage = e => {
+    bc.onmessage = (e) => {
       const data = e.data;
       if (data.select) {
         selectedParticipants.add(data.select);

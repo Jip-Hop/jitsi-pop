@@ -95,6 +95,12 @@
       #sidebar > .video-wrapper > iframe {
         width: 100%;
         height: 100%;
+        opacity: 0;
+        transition: opacity 1s ease;
+      }
+
+      #sidebar > .video-wrapper > iframe.firstplay {
+        opacity: 1;
       }
 
       #contextbar {
@@ -130,6 +136,9 @@
         line-height: 3em;
         box-sizing: border-box;
         font-size: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
       }
 
       #jitsipop button:not(:disabled):hover {
@@ -137,32 +146,36 @@
         cursor: pointer;
       }
 
-      #jitsipop button:disabled {
-        background: gray;
+      #jitsipop button.danger {
+        background: #bf2117;
       }
 
-      #contextbar > button,
-      #tabs > button {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+      #jitsipop button.danger:not(:disabled):hover {
+        background: red;
+      }
+
+      #jitsipop button:disabled {
+        background: gray;
       }
 
       #contextbar > button {
         margin: 0 10px 5px 10px;
       }
 
-      #contextbar > button > .fas,
-      #contextbar > button > .far {
+      #contextbar > button > i,
+      #settings button > i {
         font-size: 1.5em;
         width: 20px;
       }
 
       #jitsipop #tabs {
-        padding-top: 0;
-        padding-bottom: 0;
+        padding: 0 15px;
         justify-content: left;
         min-width: 303px;
+        min-height: 47px;
+        max-height: 47px;
+        overflow: hidden;
+        width: 100vw;
       }
 
       #jitsipop #tabs > button {
@@ -179,8 +192,8 @@
         border-color: #ff991f;
       }
 
-      #jitsipop #tabs > button > .fas,
-      #jitsipop #tabs > button > .far {
+      #jitsipop #tabs > button > i,
+      #settings button > i {
         font-size: 1.5em;
         margin: 0 5px;
       }
@@ -212,11 +225,25 @@
 
       #settings {
         color: #b8c7e0;
-        padding: 10px;
+        padding: 10px 15px;
       }
 
-      #settings > * {
-        margin: 10px;
+      #settings button {
+        margin: 0 0 10px 0;
+        width: 100%;
+      }
+
+      #settings .multiview-settings-section {
+        margin-bottom: 15px;
+        margin-right: 15px;
+      }
+
+      #settings .multiview-settings-section:first-of-type {
+        min-width: 150px;
+      }
+
+      #settings .multiview-settings-section:last-of-type {
+        margin-right: 0;
       }
 
       #main {
@@ -236,12 +263,17 @@
         flex-basis: 0;
       }
 
+      #meet > iframe {
+        opacity: 0;
+        transition: opacity 1s ease 1s;
+      }
+
       #settings > * {
         display: none;
       }
 
       #settings > .active {
-        display: block;
+        display: flex;
       }
 
       #jitsipop #reconnect-wrapper {
@@ -314,6 +346,10 @@
     </div>
     <div id="sidebar"></div>
     <div id="main">
+      <!-- TODO: settings drawer contains and shows all settings in one scrollable list.
+        Clicking the tabs will scroll to the clicked section. Scrolling will update the active tab.
+        Or maybe not... could be harder to close the drawer again.
+        -->
       <div id="settings-bar">
         <nav class="navbar" id="tabs">
           <button id="pop-out-settings">
@@ -322,7 +358,7 @@
           <button id="multiview-settings">
             Multiview <i class="fas fa-th-large"></i>
           </button>
-          <button id="sound-settings">
+          <!-- <button id="sound-settings">
             Sound <i class="fas fa-volume-off"></i>
           </button>
           <button id="nickname-settings">
@@ -330,24 +366,86 @@
           </button>
           <button id="invite-link-settings">
             Invite <i class="fas fa-share-square"></i>
-          </button>
+          </button> -->
         </nav>
         <div id="settings-drawer">
           <div id="settings">
             <div class="pop-out-settings">
-              <button class="pop-out-button">
-                Bring to front <i class="fas fa-arrow-circle-up"></i>
-              </button>
-              <button class="pop-out-button">
-                Close all <i class="fas fa-window-close"></i>
-              </button>
+              <div class="multiview-settings-section">
+                <button id="focus-pop-outs" class="depends-on-pop-outs" disabled>
+                  Bring to front <i class="fas fa-arrow-circle-up"></i>
+                </button>
+                <button id="close-all-pop-outs" class="depends-on-pop-outs danger" disabled>
+                  Close all <i class="fas fa-window-close"></i>
+                </button>
+              </div>
+              <div class="multiview-settings-section">
+                <p>
+                  Number of open Pop-out windows: <span class="nr-of-popouts">0</span>.
+                </p>
+                <p>
+                  Select a stream in the bar on the left and click "Pop-out" to open the stream in its own window.
+                </p>
+              </div>
             </div>
             <div class="multiview-settings">
-              <button class="multiview-button">
-                Show multiview <i class="fas fa-th-large"></i>
-              </button>
-              TODO: Make a radio to select layout: fit, fill, blend
-              TODO: Radio select for blend layout (but allow changing settings also in other modes) opacity OR blending mode (blending mode is itself a dropdown select box)
+              <div class="multiview-settings-section">
+                <button id="focus-multiview">
+                  Show multiview <i class="fas fa-th-large"></i>
+                </button>
+                <button id="add-all-multiview">
+                  Add all <i class="fas fa-plus"></i>
+                </button>
+                <button id="remove-all-multiview">
+                  Remove all <i class="fas fa-minus"></i>
+                </button>
+              </div>
+              <div class="multiview-settings-section">
+                <!-- TODO: make an extra radio for a fill layout, which tiles the streams side by side
+                (doesn't need to stay 16:9) to fill the entire window without black borders.
+                Also make a slider for opacity (for all layouts), and a select dropdown to
+                select a blending mode (for stack only).
+               -->
+
+                <p>Select the multiview layout:</p>
+
+                <div class="custom-control custom-radio">
+                  <input
+                    type="radio"
+                    name="multiviewLayout"
+                    class="custom-control-input"
+                    id="layout-fit"
+                    checked
+                  />
+                  <label class="custom-control-label" for="layout-fit"
+                    >Fit 16:9
+
+                    <small class="form-text text-muted">
+                      Crops each stream to fill a 16:9 aspect ratio box, then
+                      sizes and arranges the boxes to fit them in the multiview
+                      window. May have black on two sides.
+                    </small>
+                  </label>
+                </div>
+
+                <div class="custom-control custom-radio">
+                  <input
+                    type="radio"
+                    name="multiviewLayout"
+                    class="custom-control-input"
+                    id="layout-stack"
+                  />
+                  <label class="custom-control-label" for="layout-stack"
+                    >Stack+cover+blend
+
+                    <small class="form-text text-muted">
+                      Crops the streams to fill the entire multiview window,
+                      stacks them on top of each other and blends them.
+                      <!-- Useful for e.g. cross fading effects. -->
+                    </small>
+                  </label>
+                </div>
+              </div>
             </div>
             <div class="sound-settings">
               <p>Select how to mute streams:</p>

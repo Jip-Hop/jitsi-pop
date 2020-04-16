@@ -13,7 +13,7 @@ const handleFirstPlay = () => {
   targetVid.removeEventListener("play", handleFirstPlay);
   const frameElement = window.frameElement;
   frameElement && frameElement.classList.add("firstplay");
-}
+};
 
 const syncSource = () => {
   if (targetVid.srcObject !== sourceVid.srcObject) {
@@ -92,10 +92,14 @@ const setup = () => {
   window.onunload = () => {
     // Remove this window from the array of open pop-outs in the main window
     if (mainWindow && !mainWindow.closed) {
-      jitsipop.addOrDeleteVideo(videoId, window, inIframe ? "iframe" : "window", "delete");
+      jitsipop.addOrDeleteVideo(
+        videoId,
+        window,
+        inIframe ? "iframe" : "window",
+        "delete"
+      );
     }
   };
-
 
   targetVid = document.createElement("video");
   targetVid.muted = true;

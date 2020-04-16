@@ -1,5 +1,9 @@
 // Declare jitsipop API object
-const jitsipop = {};
+const jitsipop = {
+  api: null,
+  multiviewWindow: null,
+  multiviewLayout: "layout-fit",
+};
 
 const database = new Map([
   /* Data structure example
@@ -59,6 +63,16 @@ const getParticipantVideo = (participantId) => {
 
 const getItem = (videoId) => {
   return database.get(videoId);
+};
+
+const getNumberOfPopOuts = () => {
+  let count = 0;
+  for (let item of database.values()) {
+    if (item.windows && item.windows.size) {
+      count += item.windows.size;
+    }
+  }
+  return count;
 };
 
 const getFormattedDisplayName = (participantId) => {
@@ -170,6 +184,20 @@ const addOrDeleteVideo = (videoId, win, type, action) => {
     }
   }
 
+  const numberOfPopOuts = getNumberOfPopOuts();
+
+  document
+  .querySelectorAll("#settings span.nr-of-popouts")
+  .forEach((span) => {
+    span.innerHTML = numberOfPopOuts;
+  });
+
+  document
+    .querySelectorAll("#settings button.depends-on-pop-outs")
+    .forEach((button) => {
+      button.disabled = !(numberOfPopOuts > 0);
+    });
+
   if (item.participantId) {
     if (!videoInMultiview && !videoInPopout) {
       // Video is no longer open in multiview or pop-out window,
@@ -183,6 +211,26 @@ const addOrDeleteVideo = (videoId, win, type, action) => {
   }
 };
 
+const focusAllPopups = () => {
+  for (let item of database.values()) {
+    if (item.windows) {
+      for (let win of item.windows) {
+        !win.closed && win.focus();
+      }
+    }
+  }
+};
+
+const closeAllPopups = () => {
+  for (let item of database.values()) {
+    if (item.windows) {
+      for (let win of item.windows) {
+        !win.closed && win.close();
+      }
+    }
+  }
+};
+
 const unloadHandler = () => {
   if (api) {
     api.dispose();
@@ -192,13 +240,7 @@ const unloadHandler = () => {
     jitsipop.multiviewWindow.close();
   }
 
-  for (let item of database.values()) {
-    if (item.windows) {
-      for (let win of item.windows) {
-        win.close();
-      }
-    }
-  }
+  closeAllPopups();
 };
 
 const windowAlreadyOpen = (newWin) => {
@@ -264,7 +306,7 @@ const popOutVideo = (videoId) => {
   }
 };
 
-const makeMultiviewWindow = (videoId) => {
+const makeMultiviewWindow = () => {
   // Don't focus on the multiviewWindow if already open
   if (!jitsipop.multiviewWindow || jitsipop.multiviewWindow.closed) {
     jitsipop.multiviewWindow = window.open(
@@ -276,7 +318,18 @@ const makeMultiviewWindow = (videoId) => {
     );
     changeWindowOffset();
   }
+};
 
+const showMultiview = () => {
+  if (jitsipop.multiviewWindow && !jitsipop.multiviewWindow.closed) {
+    jitsipop.multiviewWindow.focus();
+  } else {
+    makeMultiviewWindow();
+  }
+};
+
+const toggleInMultiview = (videoId) => {
+  makeMultiviewWindow();
   // Toggle multiview selection
   if (multiviewSelection.has(videoId)) {
     multiviewSelection.delete(videoId);
@@ -284,6 +337,18 @@ const makeMultiviewWindow = (videoId) => {
     multiviewSelection.add(videoId);
   }
 
+  updateMultiviewWindow();
+};
+
+const addAllInMultiview = () => {
+  for (let videoId of database.keys()) {
+    multiviewSelection.add(videoId);
+  }
+  updateMultiviewWindow();
+};
+
+const removeAllFromMultiview = () => {
+  multiviewSelection.clear();
   updateMultiviewWindow();
 };
 
@@ -652,7 +717,7 @@ const setupContextbar = () => {
     .querySelector(".multiview-button")
     .addEventListener("click", (e) => {
       e.preventDefault();
-      makeMultiviewWindow(selectedVideoId);
+      toggleInMultiview(selectedVideoId);
     });
 
   contextbar.querySelectorAll(".move-button").forEach((element) => {
@@ -814,6 +879,32 @@ const setup = () => {
   // Unhide body now that all resources are loaded, to prevent unstyled content flash
   document.body.style.display = "";
 
+  document.getElementById("focus-multiview").onclick = showMultiview;
+  document.getElementById("add-all-multiview").onclick = addAllInMultiview;
+  document.getElementById(
+    "remove-all-multiview"
+  ).onclick = removeAllFromMultiview;
+
+  // TODO: disable closeAllPopups and focusAllPopups buttons when 0 pop-outs
+  document.getElementById("close-all-pop-outs").onclick = closeAllPopups;
+  document.getElementById("focus-pop-outs").onclick = focusAllPopups;
+
+  let radios = document.getElementsByName("multiviewLayout");
+
+  for (let radio of radios) {
+    radio.addEventListener("change", () => {
+      const layout = radio.id;
+      if (jitsipop.multiviewLayout !== layout) {
+        jitsipop.multiviewLayout = layout;
+        // Apply in multiview
+        jitsipop.multiviewWindow &&
+          !jitsipop.multiviewWindow.closed &&
+          jitsipop.multiviewWindow.reflow &&
+          jitsipop.multiviewWindow.reflow();
+      }
+    });
+  }
+
   // TODO: setup menubar, for sound settings etc.
   // TODO: dynamically set max-height for #settings-bar based on content height of selected setting
   const settingsButtons = document.querySelectorAll("#tabs button");
@@ -871,7 +962,6 @@ const setup = () => {
 
 // Expose API
 window.jitsipop = jitsipop;
-jitsipop.api = api;
 jitsipop.database = database;
 jitsipop.mainWindow = window;
 jitsipop.multiviewSelection = multiviewSelection;
