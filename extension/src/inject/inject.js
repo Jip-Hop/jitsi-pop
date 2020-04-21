@@ -18,13 +18,13 @@ const tryRuntimeSendMessage = (message, callback) => {
 };
 
 const LoadCSS = (cssURL) => {
-  return new Promise(function (resolve) {
+  return new Promise((resolve) => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = cssURL;
     document.head.appendChild(link);
 
-    link.onload = function () {
+    link.onload = () => {
       resolve();
     };
   });
@@ -88,8 +88,8 @@ const loadJitsiFrame = () => {
   const inject = () => {
     var s = document.createElement("script");
     s.src = chrome.runtime.getURL("src/inject/jitsiFrame.js");
-    s.onload = function () {
-      this.remove();
+    s.onload = () => {
+      s.remove();
     };
 
     document.head.appendChild(s);
