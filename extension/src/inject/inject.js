@@ -17,7 +17,7 @@ const tryRuntimeSendMessage = (message, callback) => {
   }
 };
 
-function LoadCSS(cssURL) {
+const LoadCSS = (cssURL) => {
   return new Promise(function (resolve) {
     const link = document.createElement("link");
     link.rel = "stylesheet";
