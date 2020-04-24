@@ -1,4 +1,4 @@
-# Pop-out-Jitsi-Meet
+# Pop-out Jitsi Meet <img alt="Logo" src="./extension/icons/icon48.png" height="24px" />
 [Chrome extension](https://chrome.google.com/webstore/detail/pop-out-jitsi-meet/boklbbjieahngbnhdmlhldjjibdnnbcn) to open [Jitsi Meet](https://jitsi.org/) videos in pop-out windows. Useful if you want to arrange your video conference across multiple monitors, or if you want to grab a clean feed of the videos with e.g. [OBS Studio](https://obsproject.com/).
 
 ![Extension in browser toolbar](screenshots/1-crop.png)
@@ -24,6 +24,9 @@ Jitsi Meet currently only works properly in Chromium based browsers ([not Firefo
 
 ### Self hosted Jitsi Meet
 This extension doesn't work with other instances of Jitsi Meet. If you host your own version of Jitsi Meet, or want to use other servers, then you need to fork this extension and add the desired domains to "matches" for "content_scripts" in the manifest.json file. Additionally you'd have to add the desired domains to `window.servers` in the background.js file. Also, you'd need to come up with an alternative to the invite link shown in the browser action popup, since it won't link to your alternative servers.
+
+### Generic extension
+Also check out [Pop-up Videos](https://github.com/Jip-Hop/pop-up-videos): my more generic extension to open videos, on any webpage, as pop-up windows.
 
 ### Capturing the streams
 The reason I made this extension is to reliably capture a clean feed from the participants in the video conference, using [OBS Studio](https://obsproject.com/). Currently window grabbing only works well on Windows (not [MacOS](https://obsproject.com/forum/threads/screen-tearing-random-glitching-w-window-capture.95181/)), so these instructions are Windows only.
