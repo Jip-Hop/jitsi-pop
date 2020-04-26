@@ -165,7 +165,20 @@
       #contextbar > button > i,
       #settings button > i {
         font-size: 1.5em;
-        width: 20px;
+        width: 1em;
+        height: 1em;
+      }
+
+      html:not(.mappertje) #contextbar .mappertje-button {
+        display: none;
+      }
+
+      #contextbar .mappertje-button > i {
+        background: #1b2638;
+        -webkit-mask: url("chrome-extension://okokapnhegofpbaeogkmbcaflmgiopkg/icons/monochrome.svg")
+          no-repeat center;
+        mask: url("chrome-extension://okokapnhegofpbaeogkmbcaflmgiopkg/icons/monochrome.svg")
+          no-repeat center;
       }
 
       #jitsipop #tabs {
@@ -325,6 +338,7 @@
       <button class="pop-out-button">
         Pop-out <i class="far fa-window-restore"></i>
       </button>
+      <button class="mappertje-button">Mappertje <i class="far"></i></button>
       <button class="multiview-button">
         Multiview toggle <i class="fas fa-th-large"></i>
       </button>
@@ -372,19 +386,29 @@
           <div id="settings">
             <div class="pop-out-settings">
               <div class="multiview-settings-section">
-                <button id="focus-pop-outs" class="depends-on-pop-outs" disabled>
+                <button
+                  id="focus-pop-outs"
+                  class="depends-on-pop-outs"
+                  disabled
+                >
                   Bring to front <i class="fas fa-arrow-circle-up"></i>
                 </button>
-                <button id="close-all-pop-outs" class="depends-on-pop-outs danger" disabled>
+                <button
+                  id="close-all-pop-outs"
+                  class="depends-on-pop-outs danger"
+                  disabled
+                >
                   Close all <i class="fas fa-window-close"></i>
                 </button>
               </div>
               <div class="multiview-settings-section">
                 <p>
-                  Number of open Pop-out windows: <span class="nr-of-popouts">0</span>.
+                  Number of open Pop-out windows:
+                  <span class="nr-of-popouts">0</span>.
                 </p>
                 <p>
-                  Select a stream in the bar on the left and click "Pop-out" to open the stream in its own window.
+                  Select a stream in the bar on the left and click "Pop-out" to
+                  open the stream in its own window.
                 </p>
               </div>
             </div>

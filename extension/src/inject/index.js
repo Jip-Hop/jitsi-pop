@@ -23,6 +23,18 @@ const database = new Map([
     */
 ]);
 
+// Try to import Mappertje
+import(
+  "chrome-extension://okokapnhegofpbaeogkmbcaflmgiopkg/modules/mapper/index.js"
+)
+  .then((module) => {
+    jitsipop.mapper = module.default;
+    document.documentElement.classList.add("mappertje");
+  })
+  .catch((e) => {
+    console.log("Couldn't integrate with Mappertje.", e);
+  });
+
 var options = {};
 var api;
 var selectedVideoId = null;
@@ -188,9 +200,7 @@ const addOrDeleteVideo = (videoId, win, type, action) => {
 
   const numberOfPopOuts = getNumberOfPopOuts();
 
-  document
-  .querySelectorAll("#settings span.nr-of-popouts")
-  .forEach((span) => {
+  document.querySelectorAll("#settings span.nr-of-popouts").forEach((span) => {
     span.innerHTML = numberOfPopOuts;
   });
 
@@ -269,8 +279,10 @@ const getParticipantId = (videoId) => {
   }
 };
 
-const getVideoDocUrl = (videoId) => {
-  return `about:blank#/extId=${extId}/id=${videoId}`;
+const getVideoDocUrl = (videoId, enableMappertje) => {
+  return `about:blank#/extId=${extId}/id=${videoId}/mappertje=${
+    enableMappertje === true
+  }`;
 };
 
 const getVideoDocUrlForIframe = (videoId) => {
@@ -293,10 +305,10 @@ const changeWindowOffset = () => {
   }
 };
 
-const popOutVideo = (videoId) => {
+const popOutVideo = (videoId, enableMappertje) => {
   const win = window.open(
-    getVideoDocUrl(videoId),
-    videoId,
+    getVideoDocUrl(videoId, enableMappertje),
+    videoId + (enableMappertje ? "mappertje" : ""),
     `status=no,menubar=no,width=${popupWidth},height=${popupHeight},left=${
       screen.left + xOffset
     },top=${screen.top + yOffset}`
@@ -714,6 +726,13 @@ const setupContextbar = () => {
     e.preventDefault();
     popOutVideo(selectedVideoId);
   });
+
+  contextbar
+    .querySelector(".mappertje-button")
+    .addEventListener("click", (e) => {
+      e.preventDefault();
+      popOutVideo(selectedVideoId, true);
+    });
 
   contextbar
     .querySelector(".multiview-button")

@@ -7,7 +7,13 @@ const jitsipop = (window.jitsipop = inPopup
 
 const mainWindow = jitsipop.mainWindow;
 
-var sourceVid, targetVid, displayName, participantId, videoId;
+var sourceVid,
+  targetVid,
+  displayName,
+  participantId,
+  videoId,
+  enableMappertje,
+  myMapper;
 
 const handleFirstPlay = () => {
   targetVid.removeEventListener("play", handleFirstPlay);
@@ -15,8 +21,36 @@ const handleFirstPlay = () => {
   frameElement && frameElement.classList.add("firstplay");
 };
 
+// TODO: currently can't call iframe.contentWindow.setup(config);
+// inside mappertje (in modules/mapper/index.js) because main.js
+// is added via a script tag, and executes in a JavaScript page context,
+// not in the context of this extension...
+
 const syncSource = () => {
-  if (targetVid.srcObject !== sourceVid.srcObject) {
+  if (enableMappertje)
+    if (myMapper) {
+      console.log(myMapper);
+      if (
+        myMapper &&
+        myMapper.getStream &&
+        myMapper.getStream() !== sourceVid.srcObject
+      ) {
+        myMapper.setStream(sourceVid.srcObject);
+      }
+    } else {
+      console.log(jitsipop.mapper);
+      myMapper = jitsipop.mapper({
+        stream: sourceVid.srcObject,
+        targetElement: document.body,
+        beforeUnloadHandler: () => {},
+        unloadHandler: () => {},
+        loadErrorHandler: (e) => {
+          console.log(e);
+        },
+        initialState: () => {},
+      });
+    }
+  else if (targetVid.srcObject !== sourceVid.srcObject) {
     targetVid.srcObject = sourceVid.srcObject;
   }
 };
@@ -51,7 +85,8 @@ const syncVideo = () => {
 };
 
 const setTitle = () => {
-  document.title = "Jitsi Meet | " + displayName;
+  document.title =
+    "Jitsi Meet | " + displayName + (enableMappertje ? " | Mappertje" : "");
 };
 
 const displayNameChangeHandler = (newDisplayName) => {
@@ -87,6 +122,7 @@ const setup = () => {
     return;
   }
 
+  enableMappertje = urlParams.get("mappertje") === "true";
   videoId = parseInt(videoId);
 
   window.onunload = () => {
@@ -101,18 +137,20 @@ const setup = () => {
     }
   };
 
-  targetVid = document.createElement("video");
-  targetVid.muted = true;
-  targetVid.autoplay = true;
+  if (!enableMappertje) {
+    targetVid = document.createElement("video");
+    targetVid.muted = true;
+    targetVid.autoplay = true;
 
-  if (inIframe) {
-    document.documentElement.classList.add("iframe");
-    targetVid.addEventListener("play", handleFirstPlay);
+    if (inIframe) {
+      document.documentElement.classList.add("iframe");
+      targetVid.addEventListener("play", handleFirstPlay);
+    }
+
+    document.body.appendChild(targetVid);
   }
 
   update();
-
-  document.body.appendChild(targetVid);
 
   // Keep source and target in sync
   setInterval(syncVideo, 1000);
