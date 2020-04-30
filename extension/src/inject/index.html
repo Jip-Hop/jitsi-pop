@@ -186,6 +186,10 @@
         background: currentColor;
       }
 
+      #copy-invite-link-button {
+        width: 80px;
+      }
+
       #jitsipop #tabs {
         padding: 0 15px;
         justify-content: left;
@@ -389,9 +393,10 @@
           <button id="nickname-settings">
             Nickname <i class="fas fa-user-circle"></i>
           </button>
+           -->
           <button id="invite-link-settings">
             Invite <i class="fas fa-share-square"></i>
-          </button> -->
+          </button>
         </nav>
         <div id="settings-drawer">
           <div id="settings">
@@ -620,7 +625,25 @@
               </ul>
             </div>
             <div class="invite-link-settings">
-              Copy invite link.
+              <form>
+                <div class="form-row align-items-center">
+                  <div class="col-auto">
+                    <input
+                      type="text"
+                      class="form-control mb-2"
+                      id="invite-link"
+                    />
+                  </div>
+                  <div class="col-auto">
+                    <button
+                      id="copy-invite-link-button"
+                      class="btn btn-primary mb-2"
+                    >
+                      Copy <i class="fas fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+              </form>
             </div>
           </div>
         </div>

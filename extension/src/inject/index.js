@@ -856,6 +856,10 @@ const connect = () => {
   api = new JitsiMeetExternalAPI(window.location.hostname, options);
   jitsipop.api = api;
 
+  document.getElementById(
+    "invite-link"
+  ).value = `https://jitsipop.tk/#/${window.location.hostname}/${options.roomName}`;
+
   api.executeCommand("subject", " ");
 
   // Hide filmStrip once on startup
@@ -1008,6 +1012,14 @@ const setup = () => {
     focusAllWindows("pop-out");
   document.getElementById("focus-mappertjes").onclick = () =>
     focusAllWindows("mappertje");
+
+  document.getElementById("copy-invite-link-button").onclick = (e) => {
+    e.preventDefault();
+    const copyText = document.getElementById("invite-link");
+    copyText.select();
+    copyText.setSelectionRange(0, 99999);
+    document.execCommand("copy");
+  };
 
   let radios = document.getElementsByName("multiviewLayout");
 
