@@ -29,7 +29,6 @@ const handleFirstPlay = () => {
 const syncSource = () => {
   if (enableMappertje)
     if (myMapper) {
-      console.log(myMapper);
       if (
         myMapper &&
         myMapper.getStream &&
@@ -38,16 +37,19 @@ const syncSource = () => {
         myMapper.setStream(sourceVid.srcObject);
       }
     } else {
-      console.log(jitsipop.mapper);
-      myMapper = jitsipop.mapper({
+      jitsipop.mapper({
         stream: sourceVid.srcObject,
         targetElement: document.body,
-        beforeUnloadHandler: () => {},
-        unloadHandler: () => {},
-        loadErrorHandler: (e) => {
-          console.log(e);
+        initialState: jitsipop.getMappertjeState(videoId),
+        readyHandler: (newMapper) => {
+          myMapper = newMapper;
+
+          const unloadHandler = () => {
+            jitsipop.setMappertjeState(videoId, myMapper.getCurrentState());
+          };
+
+          myMapper.addEventListener("unload", unloadHandler);
         },
-        initialState: () => {},
       });
     }
   else if (targetVid.srcObject !== sourceVid.srcObject) {

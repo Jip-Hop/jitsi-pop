@@ -12,12 +12,13 @@ const database = new Map([
       {
         videoId: 0, // unique, also used as key
         displayName: "jip",
-        participantId: "asdfgh", // unique
+        participantId: "asdfgh", // unique string
         sidebarVideoWrapper: "html element", // unique
         online: true,
         iframes: Set ["iframe window object"], // each iframe window object in the Set is unique
         windows: Set ["pop-out window object"], // each pop-out window object in the Set is unique
-        order, // unique, used for sorting, starts at 1
+        order: int, // unique, used for sorting, starts at 1
+        mappertjeState: {}, 
       },
     ],
     */
@@ -25,7 +26,8 @@ const database = new Map([
 
 // Try to import Mappertje
 import(
-  "chrome-extension://okokapnhegofpbaeogkmbcaflmgiopkg/modules/mapper/index.js"
+  // "chrome-extension://okokapnhegofpbaeogkmbcaflmgiopkg/modules/mapper/index.js"
+  "chrome-extension://cadlhigfdaijpppfkigeiponjnpmgnlk/modules/mapper/index.js"
 )
   .then((module) => {
     jitsipop.mapper = module.default;
@@ -75,6 +77,20 @@ const getParticipantVideo = (participantId) => {
 
 const getItem = (videoId) => {
   return database.get(videoId);
+};
+
+const getMappertjeState = (videoId) => {
+  const item = getItem(videoId);
+  if (item) {
+    return item.mappertjeState
+  }
+};
+
+const setMappertjeState = (videoId, state) => {
+  const item = getItem(videoId);
+  if (item) {
+    item.mappertjeState = state;
+  }
 };
 
 const getNumberOfPopOuts = () => {
@@ -295,23 +311,33 @@ const getMultiviewDocUrl = () => {
 
 const changeWindowOffset = () => {
   xOffset += popupWidth;
-  if (xOffset + popupWidth > screen.width) {
-    xOffset = 0;
+  if (xOffset + popupWidth > screen.availWidth) {
+    xOffset = screen.availLeft;
     yOffset += popupHeight;
   }
-  if (yOffset + popupHeight > screen.height) {
-    xOffset = 0;
-    yOffset = 0;
+  if (yOffset + popupHeight > screen.availHeight) {
+    xOffset = screen.availLeft;
+    yOffset = screen.availTop;
   }
 };
 
 const popOutVideo = (videoId, enableMappertje) => {
+  if(enableMappertje){
+    var width = screen.availWidth;
+    var height = screen.availHeight;
+    var left = screen.availLeft;
+    var top = screen.availTop;
+  } else {
+    var width = popupWidth;
+    var height = popupHeight;
+    var left = screen.availLeft + xOffset;
+    var top = screen.availTop + yOffset;
+  }
+
   const win = window.open(
     getVideoDocUrl(videoId, enableMappertje),
     videoId + (enableMappertje ? "mappertje" : ""),
-    `status=no,menubar=no,width=${popupWidth},height=${popupHeight},left=${
-      screen.left + xOffset
-    },top=${screen.top + yOffset}`
+    `status=no,menubar=no,width=${width},height=${height},left=${left},top=${top}`
   );
 
   // We made a new window
@@ -327,8 +353,8 @@ const makeMultiviewWindow = () => {
       getMultiviewDocUrl(),
       "multiview",
       `status=no,menubar=no,width=${popupWidth},height=${popupHeight},left=${
-        screen.left + xOffset
-      },top=${screen.top + yOffset}`
+        screen.availLeft + xOffset
+      },top=${screen.availTop + yOffset}`
     );
     changeWindowOffset();
   }
@@ -994,6 +1020,8 @@ jitsipop.getParticipantVideo = getParticipantVideo;
 jitsipop.addOrDeleteVideo = addOrDeleteVideo;
 jitsipop.getVideoDocUrlForIframe = getVideoDocUrlForIframe;
 jitsipop.getItemOrder = getItemOrder;
+jitsipop.getMappertjeState = getMappertjeState;
+jitsipop.setMappertjeState = setMappertjeState;
 
 tryRuntimeSendMessage(
   {
