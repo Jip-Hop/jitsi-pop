@@ -44,8 +44,8 @@ const multiviewSelection = new Set();
 const toolbarHeight = window.outerHeight - window.innerHeight;
 const popupWidth = 480;
 const popupHeight = 270 + toolbarHeight;
-var xOffset = 0,
-  yOffset = 0;
+var xOffset = screen.availLeft,
+  yOffset = screen.availTop;
 
 const extId = chrome.runtime.id;
 
