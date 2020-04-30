@@ -1,6 +1,6 @@
 {
   "name": "Pop-out Jitsi Meet",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "manifest_version": 2,
   "description": "Open Jitsi Meet videos in pop-out windows.",
   "icons": {
@@ -17,19 +17,8 @@
     "default_popup": "src/browser_action/browser_action.html"
   },
   "web_accessible_resources": [
-    "src/inject/index.html",
-    "src/inject/index.js",
-    "src/inject/video.html",
-    "src/inject/video.js",
-    "src/inject/multiview.html",
-    "src/inject/multiview.js",
-    "src/inject/jitsiFrame.js",
-    "src/inject/jitsiConfig.js",
-    "libs/fontawesome-free/css/fontawesome.min.css",
-    "libs/fontawesome-free/css/regular.css",
-    "libs/fontawesome-free/css/solid.css",
-    "libs/fontawesome-free/webfonts/fa-solid-900.woff2",
-    "libs/fontawesome-free/webfonts/fa-regular-400.woff2",
+    "src/inject/*",
+    "libs/fontawesome-free/*",
     "libs/bootstrap/css/bootstrap.min.css"
   ],
   "content_scripts": [
