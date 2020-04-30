@@ -174,12 +174,16 @@
         display: none;
       }
 
-      #contextbar .mappertje-button > i {
+      .mappertje-icon {
         background: #1b2638;
         -webkit-mask: url("chrome-extension://okokapnhegofpbaeogkmbcaflmgiopkg/icons/monochrome.svg")
           no-repeat center;
         mask: url("chrome-extension://okokapnhegofpbaeogkmbcaflmgiopkg/icons/monochrome.svg")
           no-repeat center;
+      }
+
+      #mappertje-settings .mappertje-icon {
+        background: currentColor;
       }
 
       #jitsipop #tabs {
@@ -209,6 +213,8 @@
       #jitsipop #tabs > button > i {
         font-size: 1.5em;
         margin: 0 5px;
+        width: 1em;
+        height: 1em;
       }
 
       #jitsipop #tabs > button:hover {
@@ -338,7 +344,9 @@
       <button class="pop-out-button">
         Pop-out <i class="far fa-window-restore"></i>
       </button>
-      <button class="mappertje-button">Mappertje <i class="far"></i></button>
+      <button class="mappertje-button">
+        Mappertje <i class="mappertje-icon"></i>
+      </button>
       <button class="multiview-button">
         Multiview toggle <i class="fas fa-th-large"></i>
       </button>
@@ -370,7 +378,7 @@
             Pop-out <i class="far fa-window-restore"></i>
           </button>
           <button id="mappertje-settings">
-            Mappertje <i class="far fa-window-restore"></i>
+            Mappertje <i class="mappertje-icon"></i>
           </button>
           <button id="multiview-settings">
             Multiview <i class="fas fa-th-large"></i>
@@ -438,8 +446,8 @@
                   <span class="nr-of-mappertjes">0</span>.
                 </p>
                 <p>
-                  Select a stream in the bar on the left and click "Mappertje" to
-                  map and correct its perspective in a separate window.
+                  Select a stream in the bar on the left and click "Mappertje"
+                  to map and correct its perspective in a separate window.
                 </p>
               </div>
             </div>
