@@ -205,8 +205,7 @@
         border-color: #ff991f;
       }
 
-      #jitsipop #tabs > button > i,
-      #settings button > i {
+      #jitsipop #tabs > button > i {
         font-size: 1.5em;
         margin: 0 5px;
       }
@@ -417,10 +416,18 @@
                 <button id="focus-multiview">
                   Show multiview <i class="fas fa-th-large"></i>
                 </button>
-                <button id="add-all-multiview">
+                <button
+                  id="add-all-multiview"
+                  class="depends-on-multiview"
+                  disabled
+                >
                   Add all <i class="fas fa-plus"></i>
                 </button>
-                <button id="remove-all-multiview">
+                <button
+                  id="remove-all-multiview"
+                  class="depends-on-multiview"
+                  disabled
+                >
                   Remove all <i class="fas fa-minus"></i>
                 </button>
               </div>

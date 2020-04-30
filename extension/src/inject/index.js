@@ -82,7 +82,7 @@ const getItem = (videoId) => {
 const getMappertjeState = (videoId) => {
   const item = getItem(videoId);
   if (item) {
-    return item.mappertjeState
+    return item.mappertjeState;
   }
 };
 
@@ -322,7 +322,7 @@ const changeWindowOffset = () => {
 };
 
 const popOutVideo = (videoId, enableMappertje) => {
-  if(enableMappertje){
+  if (enableMappertje) {
     var width = screen.availWidth;
     var height = screen.availHeight;
     var left = screen.availLeft;
@@ -346,6 +346,17 @@ const popOutVideo = (videoId, enableMappertje) => {
   }
 };
 
+const updateDependsOnMultiview = (e) => {
+  document
+    .querySelectorAll("#settings button.depends-on-multiview")
+    .forEach((button) => {
+      button.disabled =
+        !jitsipop.multiviewWindow ||
+        jitsipop.multiviewWindow.closed ||
+        (e && e.type === "unload");
+    });
+};
+
 const makeMultiviewWindow = () => {
   // Don't focus on the multiviewWindow if already open
   if (!jitsipop.multiviewWindow || jitsipop.multiviewWindow.closed) {
@@ -356,7 +367,12 @@ const makeMultiviewWindow = () => {
         screen.availLeft + xOffset
       },top=${screen.availTop + yOffset}`
     );
+    jitsipop.multiviewWindow.addEventListener(
+      "unload",
+      updateDependsOnMultiview
+    );
     changeWindowOffset();
+    updateDependsOnMultiview();
   }
 };
 
@@ -934,7 +950,6 @@ const setup = () => {
     "remove-all-multiview"
   ).onclick = removeAllFromMultiview;
 
-  // TODO: disable closeAllPopups and focusAllPopups buttons when 0 pop-outs
   document.getElementById("close-all-pop-outs").onclick = closeAllPopups;
   document.getElementById("focus-pop-outs").onclick = focusAllPopups;
 
