@@ -93,14 +93,21 @@ const setMappertjeState = (videoId, state) => {
   }
 };
 
-const getNumberOfPopOuts = () => {
-  let count = 0;
+const getNumberOfWindows = () => {
+  let popouts = 0;
+  let mappertjes = 0;
   for (let item of database.values()) {
-    if (item.windows && item.windows.size) {
-      count += item.windows.size;
+    if (item.windows) {
+      for (let win of item.windows) {
+        if (win.location.hash.indexOf("mappertje=false") > -1) {
+          popouts++;
+        } else {
+          mappertjes++;
+        }
+      }
     }
   }
-  return count;
+  return { popouts: popouts, mappertjes: mappertjes };
 };
 
 const getFormattedDisplayName = (participantId) => {
@@ -214,16 +221,28 @@ const addOrDeleteVideo = (videoId, win, type, action) => {
     }
   }
 
-  const numberOfPopOuts = getNumberOfPopOuts();
+  const windowCount = getNumberOfWindows();
 
   document.querySelectorAll("#settings span.nr-of-popouts").forEach((span) => {
-    span.innerHTML = numberOfPopOuts;
+    span.innerHTML = windowCount.popouts;
   });
+
+  document
+    .querySelectorAll("#settings span.nr-of-mappertjes")
+    .forEach((span) => {
+      span.innerHTML = windowCount.mappertjes;
+    });
 
   document
     .querySelectorAll("#settings button.depends-on-pop-outs")
     .forEach((button) => {
-      button.disabled = !(numberOfPopOuts > 0);
+      button.disabled = !(windowCount.popouts > 0);
+    });
+
+  document
+    .querySelectorAll("#settings button.depends-on-mappertjes")
+    .forEach((button) => {
+      button.disabled = !(windowCount.mappertjes > 0);
     });
 
   if (item.participantId) {
@@ -239,21 +258,53 @@ const addOrDeleteVideo = (videoId, win, type, action) => {
   }
 };
 
-const focusAllPopups = () => {
+const focusAllWindows = (filter) => {
   for (let item of database.values()) {
     if (item.windows) {
       for (let win of item.windows) {
-        !win.closed && win.focus();
+        if (!win.closed) {
+          if (filter) {
+            if (
+              filter === "pop-out" &&
+              win.location.hash.indexOf("mappertje=false") === -1
+            ) {
+              continue;
+            }
+            if (
+              filter === "mappertje" &&
+              win.location.hash.indexOf("mappertje=false") > -1
+            ) {
+              continue;
+            }
+          }
+          win.focus();
+        }
       }
     }
   }
 };
 
-const closeAllPopups = () => {
+const closeAllWindows = (filter) => {
   for (let item of database.values()) {
     if (item.windows) {
       for (let win of item.windows) {
-        !win.closed && win.close();
+        if (!win.closed) {
+          if (filter) {
+            if (
+              filter === "pop-out" &&
+              win.location.hash.indexOf("mappertje=false") === -1
+            ) {
+              continue;
+            }
+            if (
+              filter === "mappertje" &&
+              win.location.hash.indexOf("mappertje=false") > -1
+            ) {
+              continue;
+            }
+          }
+          win.close();
+        }
       }
     }
   }
@@ -268,7 +319,7 @@ const unloadHandler = () => {
     jitsipop.multiviewWindow.close();
   }
 
-  closeAllPopups();
+  closeAllWindows();
 };
 
 const windowAlreadyOpen = (newWin) => {
@@ -340,8 +391,8 @@ const popOutVideo = (videoId, enableMappertje) => {
     `status=no,menubar=no,width=${width},height=${height},left=${left},top=${top}`
   );
 
-  // We made a new window
-  if (!windowAlreadyOpen(win)) {
+  // We made a new pop-out window
+  if (!windowAlreadyOpen(win) && !enableMappertje) {
     changeWindowOffset();
   }
 };
@@ -950,8 +1001,14 @@ const setup = () => {
     "remove-all-multiview"
   ).onclick = removeAllFromMultiview;
 
-  document.getElementById("close-all-pop-outs").onclick = closeAllPopups;
-  document.getElementById("focus-pop-outs").onclick = focusAllPopups;
+  document.getElementById("close-all-pop-outs").onclick = () =>
+    closeAllWindows("pop-out");
+  document.getElementById("close-all-mappertjes").onclick = () =>
+    closeAllWindows("mappertje");
+  document.getElementById("focus-pop-outs").onclick = () =>
+    focusAllWindows("pop-out");
+  document.getElementById("focus-mappertjes").onclick = () =>
+    focusAllWindows("mappertje");
 
   let radios = document.getElementsByName("multiviewLayout");
 
