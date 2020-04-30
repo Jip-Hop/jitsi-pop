@@ -26,8 +26,7 @@ const database = new Map([
 
 // Try to import Mappertje
 import(
-  // "chrome-extension://okokapnhegofpbaeogkmbcaflmgiopkg/modules/mapper/index.js"
-  "chrome-extension://cadlhigfdaijpppfkigeiponjnpmgnlk/modules/mapper/index.js"
+  "chrome-extension://okokapnhegofpbaeogkmbcaflmgiopkg/modules/mapper/index.js"
 )
   .then((module) => {
     jitsipop.mapper = module.default;

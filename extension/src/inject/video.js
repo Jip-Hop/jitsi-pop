@@ -58,9 +58,15 @@ const syncSource = () => {
 };
 
 const syncVideo = () => {
-  if (inPopup && (!mainWindow || mainWindow.closed)) {
+  try {
+    if (inPopup && (!mainWindow || mainWindow.closed)) {
+      window.close();
+    }
+  } catch (e) {
+    // In case it's a left over window and we can't access mainWindow
     window.close();
   }
+
   const newVid = jitsipop.getParticipantVideo(participantId);
   if (!newVid) {
     return;
