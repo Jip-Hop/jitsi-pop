@@ -264,12 +264,12 @@
             name="roomname"
             required
             placeholder=" "
-            pattern="[0-9a-zA-Z]*"
+            pattern="[0-9a-zA-Z\-_]*"
           />
           <label for="roomname">Room</label>
           <input list="recent_rooms_list" id="recent_rooms_input" />
           <div class="requirements">
-            Use only letters and numbers for the room name.
+            Use only letters, numbers, dashes and underscores for the room name.
           </div>
         </div>
         <div id="random" title="Randomize room name"></div>
