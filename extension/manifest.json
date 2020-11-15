@@ -1,6 +1,6 @@
 {
   "name": "Pop-out Jitsi Meet",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "manifest_version": 2,
   "description": "Open Jitsi Meet videos in pop-out windows.",
   "icons": {
