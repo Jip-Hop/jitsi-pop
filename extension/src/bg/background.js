@@ -150,6 +150,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (message.type === "mainWinLoad") {
     mainAppBrowserTab = sender.tab;
     sendResponse({ options: options });
+    focusAllWindows();
   } else if (message.type === "videoWinLoad") {
     videoPopupBrowserTabs.push(sender.tab);
   } else if (message.type === "toggleFullScreen") {
