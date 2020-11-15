@@ -61,6 +61,7 @@ const config = {
   gatherStats: false,
   enableStatsID: false,
   disableDeepLinking: true,
+  prejoinPageEnabled: false,
   // disableAudioLevels: true won't prevent switching the dominant speaker.
   // Also, can't guarantee each participant uses this setting.
   // Additionally it disables audio levels in microphone GUI.
