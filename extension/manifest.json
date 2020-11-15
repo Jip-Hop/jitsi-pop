@@ -37,6 +37,7 @@
   "externally_connectable": {
     "matches": [
       "https://jip-hop.github.io/jitsi-pop/*",
+      "https://jitsipop.debeer.it/*",
       "https://jitsipop.tk/*"
     ]
   }
