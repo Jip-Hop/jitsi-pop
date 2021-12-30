@@ -9,7 +9,7 @@ const recentRoomsInput = document.getElementById("recent_rooms_input");
 const randomButton = document.getElementById("random");
 const submitButton = document.getElementById("submit");
 const showButton = document.getElementById("show");
-const link = document.querySelector("a");
+// const link = document.querySelector("a");
 const wishlist =
   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
@@ -72,35 +72,35 @@ randomButton.onclick = (e) => {
   setValue(roomnameInput, generate(12));
 };
 
-link.onclick = (e) => {
-  e.preventDefault();
-  const tmpString = "Copied!";
-  navigator.clipboard
-    .writeText(
-      `https://jitsipop.tk/#/${servers[background.selectedServerIndex]}/${
-        roomnameInput.value
-      }`
-    )
-    .then(
-      () => {
-        if (link.innerText !== tmpString) {
-          const oldString = link.innerText;
-          link.innerText = tmpString;
-          setTimeout(() => {
-            link.innerText = oldString;
-          }, 1000);
-        }
-      },
-      (err) => {
-        console.error("Async: Could not copy text: ", err);
-      }
-    );
-};
+// link.onclick = (e) => {
+//   e.preventDefault();
+//   const tmpString = "Copied!";
+//   navigator.clipboard
+//     .writeText(
+//       `https://jitsipop.tk/#/${servers[background.selectedServerIndex]}/${
+//         roomnameInput.value
+//       }`
+//     )
+//     .then(
+//       () => {
+//         if (link.innerText !== tmpString) {
+//           const oldString = link.innerText;
+//           link.innerText = tmpString;
+//           setTimeout(() => {
+//             link.innerText = oldString;
+//           }, 1000);
+//         }
+//       },
+//       (err) => {
+//         console.error("Async: Could not copy text: ", err);
+//       }
+//     );
+// };
 
 // Set values from local storage
 setValue(
   roomnameInput,
-  (recentRoomNames.length && recentRoomNames[0].roomName) || ""
+  (recentRoomNames.length && recentRoomNames[0].roomName) ? decodeURIComponent(recentRoomNames[0].roomName) : ""
 );
 setServerValue(localStorage.getItem("serverSelect"));
 
@@ -108,7 +108,7 @@ if (recentRoomNames.length) {
   recentRoomsDatalist.innerHTML = recentRoomNames.map((d) => {
     const date = new Date(d.timestamp);
     return `<option value="${
-      d.roomName
+      decodeURIComponent(d.roomName)
     }">${date.toLocaleDateString()} ${date.toLocaleTimeString()}</option>`;
   });
 
@@ -132,7 +132,7 @@ document.querySelector("form").onsubmit = (e) => {
     background.disconnect();
   } else {
     background.selectedServerIndex = parseInt(serverSelect.value);
-    background.openPopout(roomnameInput.value);
+    background.openPopout(encodeURIComponent(roomnameInput.value));
   }
   window.close();
 };

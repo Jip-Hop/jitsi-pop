@@ -36,7 +36,7 @@ const loadMain = async () => {
   ).then((response) => response.text());
   // Replace page contents with custom HTML
   document.documentElement.innerHTML = html;
-
+    console.log("JIPTEST", window.location.href)
   // Import CSS
   await LoadCSS(chrome.runtime.getURL("libs/bootstrap/css/bootstrap.min.css"));
   await LoadCSS(
